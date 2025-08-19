@@ -1,0 +1,151 @@
+import os
+import logging
+from flask import Flask, render_template, jsonify, request
+from services.weather_api import WeatherAPI
+from services.cache import Cache
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+app = Flask(__name__)
+app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
+
+# Initialize services
+weather_api = WeatherAPI()
+cache = Cache(ttl=600)  # 10 minutes TTL
+
+@app.route('/')
+def index():
+    """Render the main weather application page."""
+    logger.info("Serving main page")
+    return render_template('index.html')
+
+@app.route('/api/weather/current')
+def get_current_weather():
+    """Get current weather data for a city or coordinates."""
+    try:
+        # Get query parameters
+        city = request.args.get('city')
+        lat = request.args.get('lat')
+        lon = request.args.get('lon')
+        units = request.args.get('units', 'metric')
+        
+        # Validate input
+        if not city and not (lat and lon):
+            return jsonify({'error': 'Either city or lat/lon coordinates are required'}), 400
+        
+        # Create cache key
+        if city:
+            cache_key = f"current:{city}:{units}"
+            query_params = {'q': city, 'units': units}
+        else:
+            cache_key = f"current:{lat},{lon}:{units}"
+            query_params = {'lat': lat, 'lon': lon, 'units': units}
+        
+        # Check cache first
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            logger.info(f"Cache hit for {cache_key}")
+            return jsonify(cached_data)
+        
+        logger.info(f"Cache miss for {cache_key}")
+        
+        # Fetch from API
+        if city:
+            data = weather_api.get_current_weather(q=city, units=units)
+        else:
+            try:
+                lat_float = float(lat) if lat else None
+                lon_float = float(lon) if lon else None
+                data = weather_api.get_current_weather(lat=lat_float, lon=lon_float, units=units)
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Invalid latitude or longitude coordinates'}), 400
+        
+        # Cache the result
+        cache.set(cache_key, data)
+        
+        return jsonify(data)
+        
+    except ValueError as e:
+        logger.warning(f"Invalid request: {str(e)}")
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error fetching current weather: {str(e)}")
+        return jsonify({'error': 'Failed to fetch weather data'}), 500
+
+@app.route('/api/weather/forecast')
+def get_weather_forecast():
+    """Get 5-day weather forecast for a city or coordinates."""
+    try:
+        # Get query parameters
+        city = request.args.get('city')
+        lat = request.args.get('lat')
+        lon = request.args.get('lon')
+        units = request.args.get('units', 'metric')
+        
+        # Validate input
+        if not city and not (lat and lon):
+            return jsonify({'error': 'Either city or lat/lon coordinates are required'}), 400
+        
+        # Create cache key
+        if city:
+            cache_key = f"forecast:{city}:{units}"
+            query_params = {'q': city, 'units': units}
+        else:
+            cache_key = f"forecast:{lat},{lon}:{units}"
+            query_params = {'lat': lat, 'lon': lon, 'units': units}
+        
+        # Check cache first
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            logger.info(f"Cache hit for {cache_key}")
+            return jsonify(cached_data)
+        
+        logger.info(f"Cache miss for {cache_key}")
+        
+        # Fetch from API
+        if city:
+            data = weather_api.get_forecast(q=city, units=units)
+        else:
+            try:
+                lat_float = float(lat) if lat else None
+                lon_float = float(lon) if lon else None
+                data = weather_api.get_forecast(lat=lat_float, lon=lon_float, units=units)
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Invalid latitude or longitude coordinates'}), 400
+        
+        # Cache the result
+        cache.set(cache_key, data)
+        
+        return jsonify(data)
+        
+    except ValueError as e:
+        logger.warning(f"Invalid request: {str(e)}")
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error fetching forecast: {str(e)}")
+        return jsonify({'error': 'Failed to fetch forecast data'}), 500
+
+@app.errorhandler(404)
+def not_found(error):
+    """Handle 404 errors."""
+    return jsonify({'error': 'Endpoint not found'}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle 500 errors."""
+    logger.error(f"Internal server error: {str(error)}")
+    return jsonify({'error': 'Internal server error'}), 500
+
+if __name__ == '__main__':
+    # Check for required environment variables
+    if not os.environ.get('WEATHER_API_KEY'):
+        logger.error("WEATHER_API_KEY environment variable is required")
+        exit(1)
+    
+    logger.info("Starting Weather App on port 5000")
+    app.run(host='0.0.0.0', port=5000, debug=True)
