@@ -420,11 +420,11 @@ class WeatherApp {
                             <img src="https://openweathermap.org/img/w/${day.icon}.png" 
                                  alt="${day.description}" style="width: 40px;">
                             <div class="text-end">
-                                <div class="fw-bold">${day.temp_max}°</div>
-                                <small class="text-muted">${day.temp_min}°</small>
+                                <div class="fw-bold text-danger">High ${day.temp_max}°</div>
+                                <small class="text-info">Low ${day.temp_min}°</small>
                             </div>
                         </div>
-                        <div class="small text-muted text-center mt-1">${day.description}</div>
+                        <div class="small text-secondary text-center mt-1 fw-medium">${day.description}</div>
                     </div>
                 </div>
             `;

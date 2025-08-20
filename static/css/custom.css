@@ -110,12 +110,21 @@ header.bg-primary {
     color: #1a73e8;
 }
 
-.daily-forecast-item .text-muted {
+.daily-forecast-item .text-muted,
+.daily-forecast-item .text-secondary {
     color: #5f6368 !important;
 }
 
 .daily-forecast-item .text-primary {
     color: #1a73e8 !important;
+}
+
+.daily-forecast-item .text-danger {
+    color: #dc3545 !important;
+}
+
+.daily-forecast-item .text-info {
+    color: #0dcaf0 !important;
 }
 
 [data-bs-theme="dark"] .daily-forecast-item {
@@ -376,12 +385,79 @@ html[data-bs-theme="dark"] body {
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #5f6368;
+    color: #1a73e8 !important;
+    display: block;
+    margin-bottom: 0.25rem;
 }
 
-.info-item div:not(label) {
-    color: #202124;
-    font-weight: 600;
+.info-item div:not(.info-item label) {
+    color: #202124 !important;
+    font-weight: 700 !important;
+    font-size: 1rem;
+}
+
+/* Force readable text in all info items */
+.info-item * {
+    color: #202124 !important;
+}
+
+/* Override for specific weather card text elements */
+.weather-card .card-body h3,
+.weather-card .card-body h2,
+.weather-card .card-body p {
+    color: #202124 !important;
+}
+
+.weather-card .card-body .text-secondary {
+    color: #5f6368 !important;
+}
+
+.weather-card .card-body .text-primary {
+    color: #1a73e8 !important;
+}
+
+/* Air Quality section text readability */
+#airQualityData h5,
+#airQualityData .info-item label,
+#airQualityData .info-item div {
+    color: #202124 !important;
+}
+
+#airQualityData .bg-light h6 {
+    color: #1a73e8 !important;
+}
+
+#airQualityData .bg-light .small {
+    color: #5f6368 !important;
+}
+
+[data-bs-theme="dark"] .weather-card .card-body h3,
+[data-bs-theme="dark"] .weather-card .card-body h2,
+[data-bs-theme="dark"] .weather-card .card-body p {
+    color: #fff !important;
+}
+
+[data-bs-theme="dark"] .weather-card .card-body .text-secondary {
+    color: #adb5bd !important;
+}
+
+[data-bs-theme="dark"] .weather-card .card-body .text-primary {
+    color: #87ceeb !important;
+}
+
+/* Dark theme overrides for weather card text */
+[data-bs-theme="dark"] .weather-card .card-body h3,
+[data-bs-theme="dark"] .weather-card .card-body h2,
+[data-bs-theme="dark"] .weather-card .card-body p {
+    color: #fff !important;
+}
+
+[data-bs-theme="dark"] .weather-card .card-body .text-secondary {
+    color: #adb5bd !important;
+}
+
+[data-bs-theme="dark"] .weather-card .card-body .text-primary {
+    color: #87ceeb !important;
 }
 
 [data-bs-theme="dark"] .info-item {
@@ -395,7 +471,11 @@ html[data-bs-theme="dark"] body {
 }
 
 [data-bs-theme="dark"] .info-item div:not(label) {
-    color: #fff;
+    color: #fff !important;
+}
+
+[data-bs-theme="dark"] .info-item * {
+    color: #fff !important;
 }
 
 /* AQI indicator enhancements */
