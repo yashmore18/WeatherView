@@ -7,14 +7,14 @@ from typing import Dict, List, Any, Optional
 logger = logging.getLogger(__name__)
 
 class WeatherAPI:
-    """OpenWeatherMap API client with response mapping to internal contract."""
+    """Open-Meteo API client with response mapping to internal contract."""
     
-    BASE_URL = "https://api.openweathermap.org/data/2.5"
+    BASE_URL = "https://api.open-meteo.com/v1"
+    GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1"
     
     def __init__(self):
-        self.api_key = os.environ.get('WEATHER_API_KEY')
-        if not self.api_key:
-            raise ValueError("WEATHER_API_KEY environment variable is required")
+        # Open-Meteo doesn't require an API key for free usage
+        pass
     
     def _make_request(self, endpoint: str, params: Dict[str, Any]) -> Dict[str, Any]:
         """Make a request to the OpenWeatherMap API with error handling."""
