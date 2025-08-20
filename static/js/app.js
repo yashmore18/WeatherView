@@ -29,7 +29,7 @@ class WeatherApp {
         const clearButton = document.getElementById('clearSearch');
         
         searchInput.addEventListener('input', (e) => {
-            this.debounceSearch(e.target.value);
+            this.handleSearchInput(e.target.value);
         });
         
         searchInput.addEventListener('keypress', (e) => {
@@ -45,6 +45,7 @@ class WeatherApp {
         
         clearButton.addEventListener('click', () => {
             searchInput.value = '';
+            this.hideSearchDropdown();
             searchInput.focus();
         });
         
@@ -73,6 +74,109 @@ class WeatherApp {
         
         darkModeToggle.checked = isDarkMode;
         this.toggleDarkMode(isDarkMode);
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-container')) {
+                this.hideSearchDropdown();
+            }
+        });
+    }
+    
+    handleSearchInput(query) {
+        clearTimeout(this.searchTimeout);
+        
+        if (query.trim().length >= 2) {
+            this.searchTimeout = setTimeout(() => {
+                this.searchLocations(query.trim());
+            }, 300);
+        } else if (query.trim().length === 0) {
+            this.hideSearchDropdown();
+        }
+    }
+    
+    async searchLocations(query) {
+        try {
+            const response = await fetch(`/api/locations/search?q=${encodeURIComponent(query)}`);
+            
+            if (!response.ok) {
+                throw new Error('Failed to search locations');
+            }
+            
+            const locations = await response.json();
+            this.showSearchDropdown(locations);
+            
+        } catch (error) {
+            console.error('Error searching locations:', error);
+            this.hideSearchDropdown();
+        }
+    }
+    
+    showSearchDropdown(locations) {
+        const dropdown = document.getElementById('searchDropdown');
+        
+        if (!locations || locations.length === 0) {
+            this.hideSearchDropdown();
+            return;
+        }
+        
+        dropdown.innerHTML = locations.map(location => `
+            <button class="dropdown-item d-flex justify-content-between align-items-center" 
+                    type="button" 
+                    data-lat="${location.lat}" 
+                    data-lon="${location.lon}"
+                    data-name="${location.display_name}">
+                <div>
+                    <div class="fw-semibold">${location.name}</div>
+                    <small class="text-muted">${location.state} ${location.country}</small>
+                </div>
+                <i class="fas fa-map-marker-alt text-muted"></i>
+            </button>
+        `).join('');
+        
+        dropdown.classList.add('show');
+        
+        // Add click handlers for dropdown items
+        dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const lat = e.currentTarget.dataset.lat;
+                const lon = e.currentTarget.dataset.lon;
+                const name = e.currentTarget.dataset.name;
+                
+                document.getElementById('citySearch').value = name;
+                this.hideSearchDropdown();
+                this.searchWeatherByCoords(parseFloat(lat), parseFloat(lon));
+            });
+        });
+    }
+    
+    hideSearchDropdown() {
+        const dropdown = document.getElementById('searchDropdown');
+        dropdown.classList.remove('show');
+        dropdown.innerHTML = '';
+    }
+    
+    async searchWeatherByCoords(lat, lon) {
+        if (this.isLoading) return;
+        
+        try {
+            this.setLoading(true);
+            this.clearError();
+            
+            // Fetch current weather and forecast using coordinates
+            const [currentData, forecastData] = await Promise.all([
+                this.fetchCurrentWeather({ lat, lon, units: this.currentUnits }),
+                this.fetchForecast({ lat, lon, units: this.currentUnits })
+            ]);
+            
+            this.displayCurrentWeather(currentData);
+            this.displayForecast(forecastData);
+            
+        } catch (error) {
+            this.showError(error.message);
+        } finally {
+            this.setLoading(false);
+        }
     }
     
     debounceSearch(query) {
@@ -322,9 +426,44 @@ class WeatherApp {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                },
                 plugins: {
                     legend: {
                         display: false
+                    },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: isDark ? 'rgba(33, 37, 41, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                        titleColor: textColor,
+                        bodyColor: textColor,
+                        borderColor: 'rgb(75, 192, 192)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        callbacks: {
+                            title: function(context) {
+                                const point = points[context[0].dataIndex];
+                                const date = new Date(point.ts_iso);
+                                return date.toLocaleDateString('en-US', { 
+                                    weekday: 'long',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                            },
+                            label: function(context) {
+                                const point = points[context.dataIndex];
+                                return [
+                                    `Temperature: ${context.parsed.y}${tempUnit}`,
+                                    `Condition: ${point.description}`
+                                ];
+                            }
+                        }
                     }
                 },
                 scales: {
@@ -333,30 +472,107 @@ class WeatherApp {
                         title: {
                             display: true,
                             text: `Temperature (${tempUnit})`,
-                            color: textColor
+                            color: textColor,
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
                         },
                         ticks: {
-                            color: textColor
+                            color: textColor,
+                            font: {
+                                size: 12
+                            }
                         },
                         grid: {
-                            color: gridColor
+                            color: gridColor,
+                            lineWidth: 1
                         }
                     },
                     x: {
                         title: {
                             display: true,
                             text: 'Time',
-                            color: textColor
+                            color: textColor,
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
                         },
                         ticks: {
-                            color: textColor
+                            color: textColor,
+                            font: {
+                                size: 11
+                            },
+                            maxRotation: 45,
+                            minRotation: 0
                         },
                         grid: {
-                            color: gridColor
+                            color: gridColor,
+                            lineWidth: 1
                         }
+                    }
+                },
+                elements: {
+                    point: {
+                        radius: 4,
+                        hoverRadius: 8,
+                        backgroundColor: 'rgb(75, 192, 192)',
+                        borderColor: 'rgb(75, 192, 192)',
+                        borderWidth: 2
+                    }
+                },
+                onHover: (event, elements) => {
+                    event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+                },
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const point = points[index];
+                        this.showDetailedWeatherInfo(point);
                     }
                 }
             }
+        });
+    }
+    
+    showDetailedWeatherInfo(point) {
+        const date = new Date(point.ts_iso);
+        const formattedDate = date.toLocaleDateString('en-US', { 
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        // Create a toast notification with detailed info
+        const toast = document.createElement('div');
+        toast.className = 'toast position-fixed top-0 end-0 m-3';
+        toast.style.zIndex = '1055';
+        toast.innerHTML = `
+            <div class="toast-header">
+                <img src="https://openweathermap.org/img/w/${point.icon}.png" 
+                     alt="${point.description}" class="me-2" style="width: 24px;">
+                <strong class="me-auto">Weather Details</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                <div><strong>Time:</strong> ${formattedDate}</div>
+                <div><strong>Temperature:</strong> ${point.temp}${point.temp_unit}</div>
+                <div><strong>Condition:</strong> ${point.description}</div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Show the toast using Bootstrap's Toast component
+        const bsToast = new bootstrap.Toast(toast, { autohide: true, delay: 5000 });
+        bsToast.show();
+        
+        // Remove from DOM when hidden
+        toast.addEventListener('hidden.bs.toast', () => {
+            document.body.removeChild(toast);
         });
     }
     

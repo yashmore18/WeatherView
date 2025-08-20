@@ -130,6 +130,39 @@ def get_weather_forecast():
         logger.error(f"Error fetching forecast: {str(e)}")
         return jsonify({'error': 'Failed to fetch forecast data'}), 500
 
+@app.route('/api/locations/search')
+def search_locations():
+    """Search for locations using geocoding API."""
+    try:
+        query = request.args.get('q')
+        if not query or len(query.strip()) < 2:
+            return jsonify({'error': 'Search query must be at least 2 characters'}), 400
+        
+        # Cache search results briefly (5 minutes)
+        cache_key = f"search:{query.lower()}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            logger.info(f"Cache hit for search: {query}")
+            return jsonify(cached_data)
+        
+        logger.info(f"Cache miss for search: {query}")
+        
+        # Search for locations
+        locations = weather_api.search_locations(query.strip(), limit=8)
+        
+        # Cache the results
+        search_cache = Cache(ttl=300)  # 5 minutes for search results
+        search_cache.set(cache_key, locations)
+        
+        return jsonify(locations)
+        
+    except ValueError as e:
+        logger.warning(f"Search error: {str(e)}")
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error searching locations: {str(e)}")
+        return jsonify({'error': 'Failed to search locations'}), 500
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors."""

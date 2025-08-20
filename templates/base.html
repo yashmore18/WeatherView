@@ -46,8 +46,8 @@
                 </div>
                 
                 <div class="col-md-6">
-                    <!-- Search Bar -->
-                    <div class="search-container">
+                    <!-- Search Bar with Autocomplete -->
+                    <div class="search-container position-relative">
                         <div class="input-group">
                             <input type="text" 
                                    id="citySearch" 
@@ -67,6 +67,9 @@
                                     aria-label="Search weather">
                                 <i class="fas fa-search"></i>
                             </button>
+                        </div>
+                        <!-- Autocomplete dropdown -->
+                        <div id="searchDropdown" class="dropdown-menu w-100" style="max-height: 300px; overflow-y: auto; z-index: 1050;">
                         </div>
                     </div>
                 </div>

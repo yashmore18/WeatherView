@@ -2,7 +2,21 @@
 
 ## Overview
 
-A production-ready Flask web application that provides current weather conditions and 5-day forecasts for cities worldwide. The app features geolocation support, interactive temperature charts, responsive design with dark/light mode theming, and PWA capabilities for offline functionality. Built with a focus on performance, accessibility, and user experience.
+A production-ready Flask web application that provides current weather conditions and 5-day forecasts for cities worldwide. The app features comprehensive location search with autocomplete, interactive temperature charts with click-to-explore functionality, responsive design with dark/light mode theming, and PWA capabilities for offline functionality. Built with a focus on performance, accessibility, and user experience.
+
+## Recent Changes
+
+### Enhanced Location Search (August 2025)
+- **Autocomplete Search**: Implemented real-time location search using OpenWeatherMap's geocoding API
+- **Local Location Support**: Users can now search and find local places, neighborhoods, districts, and smaller localities
+- **Smart Dropdown**: Interactive dropdown with location suggestions showing city, state, and country information
+- **Coordinate-based Weather**: Search results use precise coordinates for more accurate weather data
+
+### Interactive Chart Features (August 2025)
+- **Clickable Data Points**: Users can click on any chart point to see detailed weather information in a toast notification
+- **Enhanced Tooltips**: Hover tooltips now show complete timestamp and weather condition details
+- **Visual Improvements**: Better styling with hover effects, responsive point sizing, and theme-aware colors
+- **Accessibility**: Improved screen reader support and keyboard navigation for chart interactions
 
 ## User Preferences
 

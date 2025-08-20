@@ -10,6 +10,7 @@ class WeatherAPI:
     """OpenWeatherMap API client with response mapping to internal contract."""
     
     BASE_URL = "https://api.openweathermap.org/data/2.5"
+    GEO_URL = "https://api.openweathermap.org/geo/1.0"
     
     def __init__(self):
         self.api_key = os.environ.get('WEATHER_API_KEY')
@@ -38,6 +39,48 @@ class WeatherAPI:
             
         except requests.exceptions.Timeout:
             raise ValueError("Request timeout - please try again")
+        except requests.exceptions.ConnectionError:
+            raise ValueError("Network error, please check connection")
+        except requests.exceptions.RequestException as e:
+            raise ValueError(f"Network error: {str(e)}")
+    
+    def search_locations(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """Search for locations using OpenWeatherMap's geocoding API."""
+        params = {
+            'q': query,
+            'limit': limit,
+            'appid': self.api_key
+        }
+        
+        try:
+            url = f"{self.GEO_URL}/direct"
+            logger.info(f"Making geocoding request with params: {params}")
+            response = requests.get(url, params=params, timeout=10)
+            
+            if response.status_code == 401:
+                raise ValueError("Invalid or missing API key")
+            elif response.status_code != 200:
+                raise ValueError(f"Geocoding API error: {response.status_code}")
+            
+            data = response.json()
+            
+            # Format the results for frontend consumption
+            locations = []
+            for item in data:
+                location = {
+                    'name': item['name'],
+                    'country': item['country'],
+                    'state': item.get('state', ''),
+                    'lat': item['lat'],
+                    'lon': item['lon'],
+                    'display_name': f"{item['name']}, {item.get('state', '')} {item['country']}".strip(', ')
+                }
+                locations.append(location)
+            
+            return locations
+            
+        except requests.exceptions.Timeout:
+            raise ValueError("Search timeout - please try again")
         except requests.exceptions.ConnectionError:
             raise ValueError("Network error, please check connection")
         except requests.exceptions.RequestException as e:
