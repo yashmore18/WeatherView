@@ -1,6 +1,7 @@
 # Weather App
 
 A production-ready Flask web application that provides current weather conditions and 5-day forecasts for any city worldwide. Features include geolocation support, interactive charts, and a responsive design with dark/light mode.
+<img width="1829" height="760" alt="image" src="https://github.com/user-attachments/assets/f2b1905f-8e9d-483c-bf5b-a0b3f132faa2" />
 
 ## Features
 
