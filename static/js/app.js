@@ -299,6 +299,11 @@ class WeatherApp {
             this.chart.destroy();
         }
         
+        // Detect current theme
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        const textColor = isDark ? '#ffffff' : '#666666';
+        const gridColor = isDark ? '#404040' : '#e0e0e0';
+        
         // Create new chart
         this.chart = new Chart(ctx, {
             type: 'line',
@@ -327,13 +332,27 @@ class WeatherApp {
                         beginAtZero: false,
                         title: {
                             display: true,
-                            text: `Temperature (${tempUnit})`
+                            text: `Temperature (${tempUnit})`,
+                            color: textColor
+                        },
+                        ticks: {
+                            color: textColor
+                        },
+                        grid: {
+                            color: gridColor
                         }
                     },
                     x: {
                         title: {
                             display: true,
-                            text: 'Time'
+                            text: 'Time',
+                            color: textColor
+                        },
+                        ticks: {
+                            color: textColor
+                        },
+                        grid: {
+                            color: gridColor
                         }
                     }
                 }
@@ -358,8 +377,38 @@ class WeatherApp {
     }
     
     toggleDarkMode(isDark) {
-        document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
+        const htmlElement = document.documentElement;
+        const theme = isDark ? 'dark' : 'light';
+        
+        htmlElement.setAttribute('data-bs-theme', theme);
         localStorage.setItem('darkMode', isDark.toString());
+        
+        // Force update chart colors if chart exists
+        if (this.chart) {
+            this.updateChartTheme(isDark);
+        }
+        
+        // Update icon to reflect current state
+        const darkModeLabel = document.querySelector('label[for="darkModeToggle"] i');
+        if (darkModeLabel) {
+            darkModeLabel.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        }
+    }
+    
+    updateChartTheme(isDark) {
+        if (!this.chart) return;
+        
+        const textColor = isDark ? '#ffffff' : '#666666';
+        const gridColor = isDark ? '#404040' : '#e0e0e0';
+        
+        this.chart.options.scales.x.ticks = { color: textColor };
+        this.chart.options.scales.y.ticks = { color: textColor };
+        this.chart.options.scales.x.title = { ...this.chart.options.scales.x.title, color: textColor };
+        this.chart.options.scales.y.title = { ...this.chart.options.scales.y.title, color: textColor };
+        this.chart.options.scales.x.grid = { color: gridColor };
+        this.chart.options.scales.y.grid = { color: gridColor };
+        
+        this.chart.update();
     }
     
     toggleFavorite(cityName) {

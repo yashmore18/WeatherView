@@ -1,4 +1,17 @@
-/* Custom styles for Weather App */
+/* Custom styles for Yash's Weather App */
+
+/* Theme transition for smooth dark/light mode switching */
+:root {
+    transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+html[data-bs-theme="dark"] {
+    color-scheme: dark;
+}
+
+html[data-bs-theme="light"] {
+    color-scheme: light;
+}
 
 /* Loading skeleton animations */
 .placeholder {
@@ -112,11 +125,32 @@
 /* Dark mode specific adjustments */
 [data-bs-theme="dark"] .weather-card {
     border-color: var(--bs-border-color);
-    background-color: var(--bs-dark);
+    background-color: var(--bs-gray-800);
+    color: var(--bs-gray-100);
 }
 
 [data-bs-theme="dark"] .chart-container canvas {
     background-color: transparent;
+}
+
+[data-bs-theme="dark"] .info-item {
+    background-color: var(--bs-gray-700);
+    color: var(--bs-gray-100);
+}
+
+[data-bs-theme="dark"] footer {
+    background-color: var(--bs-gray-800) !important;
+}
+
+[data-bs-theme="dark"] footer .text-muted {
+    color: var(--bs-gray-400) !important;
+}
+
+/* Smooth transitions for theme switching */
+.weather-card,
+.info-item,
+footer {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 /* Animation for smooth transitions */
