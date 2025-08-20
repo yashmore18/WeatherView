@@ -5,12 +5,22 @@
     transition: color 0.3s ease, background-color 0.3s ease;
 }
 
+html[data-bs-theme="light"] {
+    color-scheme: light;
+}
+
+html[data-bs-theme="light"] body {
+    background-color: #ffffff !important;
+    color: #000000;
+}
+
 html[data-bs-theme="dark"] {
     color-scheme: dark;
 }
 
-html[data-bs-theme="light"] {
-    color-scheme: light;
+html[data-bs-theme="dark"] body {
+    background-color: #212529 !important;
+    color: #ffffff;
 }
 
 /* Loading skeleton animations */
@@ -138,15 +148,36 @@ html[data-bs-theme="light"] {
     color: var(--bs-gray-100);
 }
 
+[data-bs-theme="light"] footer {
+    background-color: #f8f9fa !important;
+}
+
+[data-bs-theme="light"] footer .text-muted {
+    color: #6c757d !important;
+}
+
 [data-bs-theme="dark"] footer {
-    background-color: var(--bs-gray-800) !important;
+    background-color: #343a40 !important;
 }
 
 [data-bs-theme="dark"] footer .text-muted {
     color: var(--bs-gray-400) !important;
 }
 
+/* Light mode specific styles */
+[data-bs-theme="light"] .weather-card {
+    background-color: #ffffff;
+    border-color: #dee2e6;
+    color: #212529;
+}
+
+[data-bs-theme="light"] .info-item {
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
 /* Smooth transitions for theme switching */
+body,
 .weather-card,
 .info-item,
 footer {
