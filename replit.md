@@ -1,4 +1,4 @@
-# Weather App
+# Yash's Weather App
 
 ## Overview
 

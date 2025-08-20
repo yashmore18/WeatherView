@@ -1,6 +1,6 @@
 {
-  "name": "Weather App",
-  "short_name": "Weather",
+  "name": "Yash's Weather App",
+  "short_name": "Yash Weather",
   "description": "Get current weather and 5-day forecasts for any city with geolocation support",
   "start_url": "/",
   "display": "standalone",

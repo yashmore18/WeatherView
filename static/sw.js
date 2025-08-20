@@ -1,5 +1,5 @@
-// Service Worker for Weather App PWA
-const CACHE_NAME = 'weather-app-v1';
+// Service Worker for Yash's Weather App PWA
+const CACHE_NAME = 'yash-weather-app-v1';
 const STATIC_CACHE_URLS = [
   '/',
   '/static/css/custom.css',
