@@ -339,11 +339,11 @@ class WeatherApp {
         currentWeather.innerHTML = `
             <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
-                    <h3 class="mb-1">${data.city}, ${data.country}</h3>
-                    <small class="text-muted">${localTime}</small>
+                    <h3 class="mb-1 text-dark">${data.city}, ${data.country}</h3>
+                    <small class="text-secondary">${localTime}</small>
                 </div>
                 <button class="btn btn-link p-0" onclick="app.toggleFavorite('${data.city}')">
-                    <i class="fas fa-star ${this.isFavorite(data.city) ? 'text-warning' : 'text-muted'}"></i>
+                    <i class="fas fa-star ${this.isFavorite(data.city) ? 'text-warning' : 'text-secondary'}"></i>
                 </button>
             </div>
             
@@ -353,11 +353,11 @@ class WeatherApp {
                         <img src="https://openweathermap.org/img/w/${data.icon}.png" 
                              alt="${data.description}" class="me-2">
                         <div>
-                            <h2 class="mb-0">${data.temp}${data.temp_unit}</h2>
-                            <p class="text-muted mb-0">Feels like ${data.feels_like}${data.temp_unit}</p>
+                            <h2 class="mb-0 text-primary fw-bold">${data.temp}${data.temp_unit}</h2>
+                            <p class="text-secondary mb-0">Feels like ${data.feels_like}${data.temp_unit}</p>
                         </div>
                     </div>
-                    <p class="mb-1">${data.description}</p>
+                    <p class="mb-1 text-dark fw-medium">${data.description}</p>
                 </div>
                 
                 <div class="col-md-6">
