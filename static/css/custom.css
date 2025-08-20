@@ -134,15 +134,24 @@ header.bg-primary {
 }
 
 [data-bs-theme="dark"] .daily-forecast-item .fw-bold {
-    color: #87ceeb;
+    color: #87ceeb !important;
 }
 
-[data-bs-theme="dark"] .daily-forecast-item .text-muted {
+[data-bs-theme="dark"] .daily-forecast-item .text-muted,
+[data-bs-theme="dark"] .daily-forecast-item .text-secondary {
     color: #adb5bd !important;
 }
 
 [data-bs-theme="dark"] .daily-forecast-item .text-primary {
     color: #87ceeb !important;
+}
+
+[data-bs-theme="dark"] .daily-forecast-item .text-danger {
+    color: #ff6b6b !important;
+}
+
+[data-bs-theme="dark"] .daily-forecast-item .text-info {
+    color: #74c0fc !important;
 }
 
 /* Theme transition for smooth dark/light mode switching */
@@ -445,19 +454,19 @@ html[data-bs-theme="dark"] body {
     color: #87ceeb !important;
 }
 
-/* Dark theme overrides for weather card text */
-[data-bs-theme="dark"] .weather-card .card-body h3,
-[data-bs-theme="dark"] .weather-card .card-body h2,
-[data-bs-theme="dark"] .weather-card .card-body p {
+/* Dark theme Air Quality section overrides */
+[data-bs-theme="dark"] #airQualityData h5,
+[data-bs-theme="dark"] #airQualityData .info-item label,
+[data-bs-theme="dark"] #airQualityData .info-item div {
     color: #fff !important;
 }
 
-[data-bs-theme="dark"] .weather-card .card-body .text-secondary {
-    color: #adb5bd !important;
+[data-bs-theme="dark"] #airQualityData .bg-light h6 {
+    color: #87ceeb !important;
 }
 
-[data-bs-theme="dark"] .weather-card .card-body .text-primary {
-    color: #87ceeb !important;
+[data-bs-theme="dark"] #airQualityData .bg-light .small {
+    color: #adb5bd !important;
 }
 
 [data-bs-theme="dark"] .info-item {
@@ -467,7 +476,7 @@ html[data-bs-theme="dark"] body {
 }
 
 [data-bs-theme="dark"] .info-item label {
-    color: #adb5bd;
+    color: #87ceeb !important;
 }
 
 [data-bs-theme="dark"] .info-item div:not(label) {
