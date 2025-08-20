@@ -7,7 +7,7 @@
     <div class="col-12">
         <!-- Current Weather Card -->
         <div id="weatherCard" class="card weather-card mb-4" style="display: none;">
-            <div class="card-header">
+            <div class="card-header bg-gradient">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-thermometer-half me-2"></i>
                     Current Weather
@@ -20,12 +20,42 @@
             </div>
         </div>
         
-        <!-- 5-Day Forecast Card -->
+        <!-- 7-Day Forecast Card -->
+        <div id="dailyForecastCard" class="card weather-card mb-4" style="display: none;">
+            <div class="card-header bg-gradient">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-week me-2"></i>
+                    7-Day Forecast
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="dailyForecast" class="row">
+                    <!-- Daily forecast will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Air Quality & Visibility Card -->
+        <div id="airQualityCard" class="card weather-card mb-4" style="display: none;">
+            <div class="card-header bg-gradient">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-lungs me-2"></i>
+                    Air Quality & Visibility
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="airQualityData">
+                    <!-- Air quality data will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hourly Temperature Chart -->
         <div id="forecastCard" class="card weather-card mb-4" style="display: none;">
-            <div class="card-header">
+            <div class="card-header bg-gradient">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-chart-line me-2"></i>
-                    5-Day Forecast
+                    Temperature Trend
                 </h5>
             </div>
             <div class="card-body">

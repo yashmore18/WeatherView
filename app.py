@@ -163,6 +163,47 @@ def search_locations():
         logger.error(f"Error searching locations: {str(e)}")
         return jsonify({'error': 'Failed to search locations'}), 500
 
+@app.route('/api/air-quality')
+def get_air_quality():
+    """Get air quality data for coordinates."""
+    try:
+        lat = request.args.get('lat')
+        lon = request.args.get('lon')
+        
+        if not lat or not lon:
+            return jsonify({'error': 'Latitude and longitude are required'}), 400
+        
+        try:
+            lat_float = float(lat)
+            lon_float = float(lon)
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid latitude or longitude coordinates'}), 400
+        
+        # Cache air quality data briefly (30 minutes)
+        cache_key = f"aqi:{lat},{lon}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            logger.info(f"Cache hit for air quality: {lat},{lon}")
+            return jsonify(cached_data)
+        
+        logger.info(f"Cache miss for air quality: {lat},{lon}")
+        
+        # Fetch air quality data
+        data = weather_api.get_air_pollution(lat_float, lon_float)
+        
+        # Cache the results for 30 minutes
+        aqi_cache = Cache(ttl=1800)  # 30 minutes
+        aqi_cache.set(cache_key, data)
+        
+        return jsonify(data)
+        
+    except ValueError as e:
+        logger.warning(f"Air quality error: {str(e)}")
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error fetching air quality: {str(e)}")
+        return jsonify({'error': 'Failed to fetch air quality data'}), 500
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors."""

@@ -171,6 +171,15 @@ class WeatherApp {
             
             this.displayCurrentWeather(currentData);
             this.displayForecast(forecastData);
+            this.displayDailyForecast(forecastData);
+            
+            // Fetch air quality data
+            try {
+                const airQualityData = await this.fetchAirQuality(lat, lon);
+                this.displayAirQuality(airQualityData, currentData.visibility);
+            } catch (error) {
+                console.warn('Air quality data unavailable:', error);
+            }
             
         } catch (error) {
             this.showError(error.message);
@@ -209,6 +218,17 @@ class WeatherApp {
             
             this.displayCurrentWeather(currentData);
             this.displayForecast(forecastData);
+            this.displayDailyForecast(forecastData);
+            
+            // Fetch air quality data if coordinates are available
+            if (currentData.lat && currentData.lon) {
+                try {
+                    const airQualityData = await this.fetchAirQuality(currentData.lat, currentData.lon);
+                    this.displayAirQuality(airQualityData, currentData.visibility);
+                } catch (error) {
+                    console.warn('Air quality data unavailable:', error);
+                }
+            }
             
             // Save last searched city
             localStorage.setItem('lastWeatherCity', city.trim());
@@ -249,6 +269,15 @@ class WeatherApp {
             
             this.displayCurrentWeather(currentData);
             this.displayForecast(forecastData);
+            this.displayDailyForecast(forecastData);
+            
+            // Fetch air quality data
+            try {
+                const airQualityData = await this.fetchAirQuality(latitude, longitude);
+                this.displayAirQuality(airQualityData, currentData.visibility);
+            } catch (error) {
+                console.warn('Air quality data unavailable:', error);
+            }
             
             // Update search input with city name
             document.getElementById('citySearch').value = currentData.city;
@@ -290,6 +319,17 @@ class WeatherApp {
         }
         
         return await response.json();
+    }
+    
+    async fetchAirQuality(lat, lon) {
+        const response = await fetch(`/api/air-quality?lat=${lat}&lon=${lon}`);
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to fetch air quality data');
+        }
+        
+        return response.json();
     }
     
     displayCurrentWeather(data) {
@@ -334,6 +374,18 @@ class WeatherApp {
                                 <div>${data.wind_speed} ${data.wind_unit}</div>
                             </div>
                         </div>
+                        <div class="col-6">
+                            <div class="info-item">
+                                <label class="text-muted small">Pressure</label>
+                                <div>${data.pressure} hPa</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="info-item">
+                                <label class="text-muted small">Visibility</label>
+                                <div>${data.visibility} km</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -341,6 +393,124 @@ class WeatherApp {
         
         // Show the weather card
         document.getElementById('weatherCard').style.display = 'block';
+    }
+    
+    displayDailyForecast(data) {
+        if (!data.daily_forecast || data.daily_forecast.length === 0) {
+            return;
+        }
+        
+        const dailyForecast = document.getElementById('dailyForecast');
+        const today = new Date().toISOString().split('T')[0];
+        
+        const forecastItems = data.daily_forecast.map((day, index) => {
+            const date = new Date(day.date);
+            const isToday = day.date === today;
+            const dayName = isToday ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'long' });
+            const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            
+            return `
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="daily-forecast-item p-3 rounded border">
+                        <div class="text-center">
+                            <div class="fw-bold ${isToday ? 'text-primary' : ''}">${dayName}</div>
+                            <small class="text-muted">${dateStr}</small>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mt-2">
+                            <img src="https://openweathermap.org/img/w/${day.icon}.png" 
+                                 alt="${day.description}" style="width: 40px;">
+                            <div class="text-end">
+                                <div class="fw-bold">${day.temp_max}°</div>
+                                <small class="text-muted">${day.temp_min}°</small>
+                            </div>
+                        </div>
+                        <div class="small text-muted text-center mt-1">${day.description}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        dailyForecast.innerHTML = forecastItems;
+        document.getElementById('dailyForecastCard').style.display = 'block';
+    }
+    
+    displayAirQuality(airData, visibility) {
+        const airQualityData = document.getElementById('airQualityData');
+        
+        // AQI color coding
+        const aqiColors = {
+            1: '#00e400', // Good
+            2: '#ffff00', // Fair
+            3: '#ff7e00', // Moderate
+            4: '#ff0000', // Poor
+            5: '#8f3f97'  // Very Poor
+        };
+        
+        const aqiColor = aqiColors[airData.aqi] || '#666';
+        
+        airQualityData.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="aqi-indicator rounded-circle me-3" 
+                             style="width: 60px; height: 60px; background-color: ${aqiColor}; display: flex; align-items: center; justify-content: center;">
+                            <span class="fw-bold text-white">${airData.aqi}</span>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">Air Quality Index</h5>
+                            <span class="badge" style="background-color: ${aqiColor}; color: white;">
+                                ${airData.aqi_description}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="info-item">
+                                <label class="text-muted small">PM2.5</label>
+                                <div>${Math.round(airData.pm2_5)} μg/m³</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="info-item">
+                                <label class="text-muted small">PM10</label>
+                                <div>${Math.round(airData.pm10)} μg/m³</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="info-item">
+                                <label class="text-muted small">NO₂</label>
+                                <div>${Math.round(airData.no2)} μg/m³</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="info-item">
+                                <label class="text-muted small">O₃</label>
+                                <div>${Math.round(airData.o3)} μg/m³</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-3 p-3 rounded bg-light">
+                <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>Air Quality Guidelines</h6>
+                <div class="row small">
+                    <div class="col-md-6">
+                        <div><span class="badge me-2" style="background-color: #00e400;">1</span>Good - Air quality is satisfactory</div>
+                        <div><span class="badge me-2" style="background-color: #ffff00; color: #000;">2</span>Fair - Acceptable for most people</div>
+                        <div><span class="badge me-2" style="background-color: #ff7e00;">3</span>Moderate - Sensitive groups may experience symptoms</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div><span class="badge me-2" style="background-color: #ff0000;">4</span>Poor - Health warnings of emergency conditions</div>
+                        <div><span class="badge me-2" style="background-color: #8f3f97;">5</span>Very Poor - Health alert, everyone may be affected</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('airQualityCard').style.display = 'block';
     }
     
     displayForecast(data) {
@@ -408,6 +578,12 @@ class WeatherApp {
         const textColor = isDark ? '#ffffff' : '#666666';
         const gridColor = isDark ? '#404040' : '#e0e0e0';
         
+        // Create gradient for the chart
+        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, isDark ? 'rgba(102, 126, 234, 0.4)' : 'rgba(102, 126, 234, 0.3)');
+        gradient.addColorStop(0.5, isDark ? 'rgba(118, 75, 162, 0.2)' : 'rgba(118, 75, 162, 0.15)');
+        gradient.addColorStop(1, isDark ? 'rgba(102, 126, 234, 0.05)' : 'rgba(102, 126, 234, 0.02)');
+        
         // Create new chart
         this.chart = new Chart(ctx, {
             type: 'line',
@@ -416,11 +592,19 @@ class WeatherApp {
                 datasets: [{
                     label: `Temperature (${tempUnit})`,
                     data: temperatures,
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
-                    borderWidth: 2,
+                    borderColor: isDark ? '#667eea' : '#5a6fd8',
+                    backgroundColor: gradient,
+                    borderWidth: 3,
                     fill: true,
-                    tension: 0.4
+                    tension: 0.4,
+                    pointBackgroundColor: '#667eea',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 8,
+                    pointHoverBackgroundColor: '#764ba2',
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 3
                 }]
             },
             options: {
@@ -481,12 +665,17 @@ class WeatherApp {
                         ticks: {
                             color: textColor,
                             font: {
-                                size: 12
+                                size: 12,
+                                weight: 500
                             }
                         },
                         grid: {
                             color: gridColor,
-                            lineWidth: 1
+                            lineWidth: 1,
+                            borderDash: [2, 2]
+                        },
+                        border: {
+                            display: false
                         }
                     },
                     x: {
