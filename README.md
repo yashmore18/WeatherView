@@ -42,5 +42,3 @@ A production-ready Flask web application that provides current weather condition
 
 ### Infrastructure
 - **In-memory Caching**: TTL-based caching system (Redis-ready architecture)
-
-### More Info
