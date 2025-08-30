@@ -1,8 +1,13 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()  # this loads values from .env into os.environment
+import webbrowser
+import threading
 import logging
 from flask import Flask, render_template, jsonify, request
 from services.weather_api import WeatherAPI
 from services.cache import Cache
+
 
 # Configure logging
 logging.basicConfig(
@@ -215,6 +220,9 @@ def internal_error(error):
     logger.error(f"Internal server error: {str(error)}")
     return jsonify({'error': 'Internal server error'}), 500
 
+def open_browser():
+    webbrowser.open_new("http://127.0.0.1:5000/")
+
 if __name__ == '__main__':
     # Check for required environment variables
     if not os.environ.get('WEATHER_API_KEY'):
@@ -222,4 +230,8 @@ if __name__ == '__main__':
         exit(1)
     
     logger.info("Starting Weather App on port 5000")
+
+    # Start a thread to open the browser automatically
+    threading.Timer(1.0, open_browser).start()
+    
     app.run(host='0.0.0.0', port=5000, debug=True)
