@@ -1,0 +1,77 @@
+# WeatherView 2.0
+
+## Read First
+
+Before beginning any implementation:
+
+1. Read docs/weatherview2.0design.md
+2. Understand the existing codebase.
+3. Explain your implementation plan.
+4. Wait for approval before modifying files.
+
+---
+
+## Tech Stack
+
+Backend
+- Flask
+- Python
+
+Frontend
+- HTML
+- CSS
+- Vanilla JavaScript
+
+Do NOT introduce:
+
+- React
+- Vue
+- Angular
+- Tailwind
+- jQuery
+
+---
+
+## Engineering Principles
+
+- Preserve existing functionality.
+- Keep changes incremental.
+- Avoid unrelated refactoring.
+- Prioritize readability and maintainability.
+- Optimize for performance and accessibility.
+
+---
+
+## Design Principles
+
+Follow the approved design specification located at:
+
+docs/weatherview2.0design.md
+
+The application should feel:
+
+- Premium
+- Calm
+- Elegant
+- Apple-inspired
+- Minimal
+- Atmospheric
+
+Avoid:
+
+- Excessive blur
+- Flashy effects
+- Heavy animations
+- Visual clutter
+
+---
+
+## Workflow
+
+For every task:
+
+- Explain the implementation plan.
+- List affected files.
+- Implement only the requested scope.
+- Summarize completed work.
+- Mention any risks or follow-up tasks.
