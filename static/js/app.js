@@ -437,16 +437,16 @@ class WeatherApp {
     displayAirQuality(airData, visibility) {
         const airQualityData = document.getElementById('airQualityData');
         
-        // AQI color coding
+        // AQI color coding - using CSS custom properties for consistency
         const aqiColors = {
-            1: '#00e400', // Good
-            2: '#ffff00', // Fair
-            3: '#ff7e00', // Moderate
-            4: '#ff0000', // Poor
-            5: '#8f3f97'  // Very Poor
+            1: 'var(--wv-color-success)',   // Good
+            2: 'var(--wv-color-warning)',   // Fair
+            3: 'var(--wv-color-warning)',   // Moderate (using warning)
+            4: 'var(--wv-color-error)',     // Poor
+            5: 'var(--wv-color-error)'      // Very Poor (using error)
         };
         
-        const aqiColor = aqiColors[airData.aqi] || '#666';
+        const aqiColor = aqiColors[airData.aqi] || 'var(--wv-color-text-tertiary)';
         
         airQualityData.innerHTML = `
             <div class="row">
@@ -494,17 +494,17 @@ class WeatherApp {
                 </div>
             </div>
             
-            <div class="mt-3 p-3 rounded bg-light">
+            <div class="mt-3 p-3 rounded" style="background: var(--wv-color-surface); border: 1px solid var(--wv-color-border);">
                 <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>Air Quality Guidelines</h6>
                 <div class="row small">
                     <div class="col-md-6">
-                        <div><span class="badge me-2" style="background-color: #00e400;">1</span>Good - Air quality is satisfactory</div>
-                        <div><span class="badge me-2" style="background-color: #ffff00; color: #000;">2</span>Fair - Acceptable for most people</div>
-                        <div><span class="badge me-2" style="background-color: #ff7e00;">3</span>Moderate - Sensitive groups may experience symptoms</div>
+                        <div><span class="badge me-2" style="background-color: var(--wv-color-success);">1</span>Good - Air quality is satisfactory</div>
+                        <div><span class="badge me-2" style="background-color: var(--wv-color-warning); color: var(--wv-color-text-inverse);">2</span>Fair - Acceptable for most people</div>
+                        <div><span class="badge me-2" style="background-color: var(--wv-color-warning);">3</span>Moderate - Sensitive groups may experience symptoms</div>
                     </div>
                     <div class="col-md-6">
-                        <div><span class="badge me-2" style="background-color: #ff0000;">4</span>Poor - Health warnings of emergency conditions</div>
-                        <div><span class="badge me-2" style="background-color: #8f3f97;">5</span>Very Poor - Health alert, everyone may be affected</div>
+                        <div><span class="badge me-2" style="background-color: var(--wv-color-error);">4</span>Poor - Health warnings of emergency conditions</div>
+                        <div><span class="badge me-2" style="background-color: var(--wv-color-error);">5</span>Very Poor - Health alert, everyone may be affected</div>
                     </div>
                 </div>
             </div>
@@ -575,14 +575,36 @@ class WeatherApp {
         
         // Detect current theme
         const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-        const textColor = isDark ? '#ffffff' : '#666666';
-        const gridColor = isDark ? '#404040' : '#e0e0e0';
         
-        // Create gradient for the chart
+        // Read CSS custom properties for theme-aware colors
+        const rootStyles = getComputedStyle(document.documentElement);
+        const accentColor = rootStyles.getPropertyValue('--wv-color-accent').trim();
+        const accentColorHover = rootStyles.getPropertyValue('--wv-color-accent-hover').trim();
+        const textColor = isDark ? rootStyles.getPropertyValue('--wv-color-text-primary').trim() : rootStyles.getPropertyValue('--wv-color-text-secondary').trim();
+        const gridColor = rootStyles.getPropertyValue('--wv-color-border').trim();
+        const surfaceColor = rootStyles.getPropertyValue('--wv-color-surface').trim();
+        
+        // Parse accent color for gradient creation (assuming hex format like #2563eb)
+        const hexToRgba = (hex, alpha) => {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        };
+        
+        const accentRgba = hexToRgba(accentColor, 1);
+        const accentRgba40 = hexToRgba(accentColor, 0.4);
+        const accentRgba30 = hexToRgba(accentColor, 0.3);
+        const accentRgba20 = hexToRgba(accentColor, 0.2);
+        const accentRgba15 = hexToRgba(accentColor, 0.15);
+        const accentRgba05 = hexToRgba(accentColor, 0.05);
+        const accentRgba02 = hexToRgba(accentColor, 0.02);
+        
+        // Create gradient for the chart using CSS token colors
         const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, isDark ? 'rgba(102, 126, 234, 0.4)' : 'rgba(102, 126, 234, 0.3)');
-        gradient.addColorStop(0.5, isDark ? 'rgba(118, 75, 162, 0.2)' : 'rgba(118, 75, 162, 0.15)');
-        gradient.addColorStop(1, isDark ? 'rgba(102, 126, 234, 0.05)' : 'rgba(102, 126, 234, 0.02)');
+        gradient.addColorStop(0, isDark ? accentRgba40 : accentRgba30);
+        gradient.addColorStop(0.5, isDark ? accentRgba20 : accentRgba15);
+        gradient.addColorStop(1, isDark ? accentRgba05 : accentRgba02);
         
         // Create new chart
         this.chart = new Chart(ctx, {
@@ -592,18 +614,18 @@ class WeatherApp {
                 datasets: [{
                     label: `Temperature (${tempUnit})`,
                     data: temperatures,
-                    borderColor: isDark ? '#667eea' : '#5a6fd8',
+                    borderColor: accentColor,
                     backgroundColor: gradient,
                     borderWidth: 3,
                     fill: true,
                     tension: 0.4,
-                    pointBackgroundColor: '#667eea',
-                    pointBorderColor: '#ffffff',
+                    pointBackgroundColor: accentColor,
+                    pointBorderColor: surfaceColor,
                     pointBorderWidth: 2,
                     pointRadius: 5,
                     pointHoverRadius: 8,
-                    pointHoverBackgroundColor: '#764ba2',
-                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBackgroundColor: accentColorHover,
+                    pointHoverBorderColor: surfaceColor,
                     pointHoverBorderWidth: 3
                 }]
             },
@@ -624,7 +646,7 @@ class WeatherApp {
                         backgroundColor: isDark ? 'rgba(33, 37, 41, 0.9)' : 'rgba(255, 255, 255, 0.9)',
                         titleColor: textColor,
                         bodyColor: textColor,
-                        borderColor: 'rgb(75, 192, 192)',
+                        borderColor: gridColor,
                         borderWidth: 1,
                         cornerRadius: 8,
                         displayColors: false,
@@ -706,8 +728,8 @@ class WeatherApp {
                     point: {
                         radius: 4,
                         hoverRadius: 8,
-                        backgroundColor: 'rgb(75, 192, 192)',
-                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: accentColor,
+                        borderColor: surfaceColor,
                         borderWidth: 2
                     }
                 },
