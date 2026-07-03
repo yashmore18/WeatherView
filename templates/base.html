@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
 
     <!-- PWA Manifest -->
-    <link rel="manifest" href="{{ url_for('static', filename='../manifest.json') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 
     <!-- Open Graph meta tags -->
     <meta property="og:title" content="WeatherView">
@@ -31,6 +31,16 @@
     {% block head %}{% endblock %}
 </head>
 <body>
+    <!-- Dynamic Weather Scene Background -->
+    <div id="wvScene" class="wv-scene" data-condition="clear" data-night="false" aria-hidden="true">
+        <div class="wv-scene__gradient"></div>
+        <canvas id="wvSceneCanvas" class="wv-scene__canvas"></canvas>
+        <div class="wv-scene__fog-band wv-scene__fog-band--1"></div>
+        <div class="wv-scene__fog-band wv-scene__fog-band--2"></div>
+        <div class="wv-scene__fog-band wv-scene__fog-band--3"></div>
+        <div class="wv-scene__flash"></div>
+    </div>
+
     <!-- Left Navigation Sidebar -->
     <aside class="wv-sidebar" role="navigation" aria-label="Main navigation">
         <div class="wv-sidebar__brand">
@@ -145,6 +155,7 @@
     <div aria-live="polite" aria-atomic="true" class="sr-only" id="srAnnouncements"></div>
 
     <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/weather-scene.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 
     {% block scripts %}{% endblock %}

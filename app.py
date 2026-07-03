@@ -4,7 +4,7 @@ load_dotenv()  # this loads values from .env into os.environment
 import webbrowser
 import threading
 import logging
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_from_directory
 from services.weather_api import WeatherAPI
 from services.cache import Cache
 
@@ -30,6 +30,15 @@ def index():
     """Render the main weather application page."""
     logger.info("Serving main page")
     return render_template('index.html')
+
+@app.route('/sw.js')
+def service_worker():
+    """Serve the service worker from the root so its default scope covers the
+    whole app - registering it from /static/sw.js would scope it to /static/
+    only, and it would never control navigations to '/'."""
+    response = send_from_directory('static', 'sw.js')
+    response.headers['Service-Worker-Allowed'] = '/'
+    return response
 
 @app.route('/api/weather/current')
 def get_current_weather():

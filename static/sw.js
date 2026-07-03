@@ -1,13 +1,13 @@
-// Service Worker for Yash's Weather App PWA
-const CACHE_NAME = 'yash-weather-app-v1';
+// Service Worker for WeatherView PWA
+const CACHE_NAME = 'yash-weather-app-v2';
 const STATIC_CACHE_URLS = [
   '/',
   '/static/css/custom.css',
+  '/static/js/weather-scene.js',
   '/static/js/app.js',
-  'https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css',
+  '/static/manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://cdn.jsdelivr.net/npm/chart.js',
-  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js'
+  'https://cdn.jsdelivr.net/npm/chart.js'
 ];
 
 // Install event - cache static assets
@@ -69,11 +69,15 @@ self.addEventListener('fetch', event => {
   if (url.pathname.startsWith('/api/')) {
     // API requests - network first with fallback
     event.respondWith(networkFirstStrategy(request));
-  } else if (STATIC_CACHE_URLS.some(staticUrl => request.url.includes(staticUrl.split('/').pop()))) {
-    // Static assets - cache first
+  } else if (request.mode !== 'navigate' && STATIC_CACHE_URLS.some(staticUrl => {
+    const filename = staticUrl.split('/').pop();
+    return filename && request.url.includes(filename);
+  })) {
+    // Static assets (not page navigations) - cache first
     event.respondWith(cacheFirstStrategy(request));
   } else {
-    // Other requests - network first with cache fallback
+    // Navigations and everything else - network first, falling back to cache,
+    // then to the offline page for navigations with no cache available
     event.respondWith(networkFirstStrategy(request));
   }
 });
@@ -146,53 +150,54 @@ async function cacheFirstStrategy(request) {
 function generateOfflinePage() {
   return `
     <!DOCTYPE html>
-    <html lang="en" data-bs-theme="light">
+    <html lang="en">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Weather App - Offline</title>
-      <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+      <title>WeatherView - Offline</title>
+      <link rel="stylesheet" href="/static/css/custom.css">
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+      <script>
+        // Same-origin localStorage is available here even on the SW-generated
+        // page - respect the user's last theme choice before first paint.
+        try {
+          var isDark = localStorage.getItem('darkMode') === 'true';
+          document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
+        } catch (e) {}
+      </script>
     </head>
     <body>
-      <div class="container mt-5">
-        <div class="row justify-content-center">
-          <div class="col-md-6 text-center">
-            <i class="fas fa-wifi-slash fa-4x text-muted mb-4"></i>
-            <h1 class="h3 mb-3">You're Offline</h1>
-            <p class="text-muted mb-4">
-              It looks like you're not connected to the internet. 
-              Please check your connection and try again.
-            </p>
-            <button onclick="window.location.reload()" class="btn btn-primary">
-              <i class="fas fa-redo me-2"></i>
-              Try Again
-            </button>
-            <div class="mt-4">
-              <p class="small text-muted">
-                Last weather data may be available in your browser's local storage.
-              </p>
-            </div>
+      <section class="wv-empty-state" aria-labelledby="offlineTitle">
+        <div class="wv-empty-state__inner glass-card">
+          <div class="wv-empty-state__icon">
+            <i class="fas fa-wifi-slash" aria-hidden="true"></i>
           </div>
+          <h1 id="offlineTitle" class="wv-empty-state__title">You're Offline</h1>
+          <p class="wv-empty-state__description">
+            It looks like you're not connected to the internet. Please check your
+            connection and try again.
+          </p>
+          <div class="wv-empty-state__actions">
+            <button type="button" class="wv-btn wv-btn--primary wv-btn--lg" onclick="window.location.reload()">
+              <i class="fas fa-redo" aria-hidden="true"></i>
+              <span>Try Again</span>
+            </button>
+          </div>
+          <p id="lastCityHint" class="wv-empty-state__description" style="display: none; font-size: var(--wv-text-sm);"></p>
         </div>
-      </div>
-      
+      </section>
+
       <script>
-        // Try to load last weather data from localStorage
-        document.addEventListener('DOMContentLoaded', function() {
-          const lastCity = localStorage.getItem('lastWeatherCity');
+        document.addEventListener('DOMContentLoaded', function () {
+          var lastCity = localStorage.getItem('lastWeatherCity');
           if (lastCity) {
-            const offlineMessage = document.createElement('div');
-            offlineMessage.className = 'alert alert-info mt-3';
-            offlineMessage.innerHTML = 
-              '<i class="fas fa-info-circle me-2"></i>' +
-              'Last searched city: <strong>' + lastCity + '</strong>';
-            document.querySelector('.col-md-6').appendChild(offlineMessage);
+            var hint = document.getElementById('lastCityHint');
+            hint.textContent = 'Last searched city: ' + lastCity;
+            hint.style.display = 'block';
           }
         });
-        
-        // Listen for online status
-        window.addEventListener('online', function() {
+
+        window.addEventListener('online', function () {
           window.location.reload();
         });
       </script>

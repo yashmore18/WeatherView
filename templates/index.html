@@ -6,6 +6,19 @@
 <div class="wv-page">
     <!-- Hero Weather Card -->
     <section id="heroCard" class="wv-hero-card" style="display: none;" aria-labelledby="heroTitle">
+        <div id="heroSkeleton" class="wv-hero-skeleton glass-card" aria-hidden="true">
+            <div class="wv-hero-skeleton__row">
+                <div class="wv-skeleton wv-skeleton--circle" style="width: 64px; height: 64px;"></div>
+                <div class="wv-skeleton wv-skeleton--text" style="width: 180px;"></div>
+            </div>
+            <div class="wv-skeleton wv-skeleton--block" style="width: 140px; height: 56px;"></div>
+            <div class="wv-hero-skeleton__highlights">
+                <div class="wv-skeleton wv-skeleton--block" style="height: 64px;"></div>
+                <div class="wv-skeleton wv-skeleton--block" style="height: 64px;"></div>
+                <div class="wv-skeleton wv-skeleton--block" style="height: 64px;"></div>
+                <div class="wv-skeleton wv-skeleton--block" style="height: 64px;"></div>
+            </div>
+        </div>
         <div class="wv-hero-card__inner glass-card">
             <header class="wv-hero-card__header">
                 <div class="wv-hero-card__location">
@@ -92,6 +105,14 @@
                 </button>
             </div>
         </header>
+        <div id="hourlySkeleton" class="wv-hourly-skeleton" aria-hidden="true">
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+        </div>
         <div class="wv-hourly-scroll" id="hourlyScroll" role="list" aria-label="Hourly forecast items">
             <!-- Hourly items populated by JS -->
         </div>
@@ -102,6 +123,15 @@
         <header class="wv-section__header">
             <h2 id="dailyTitle" class="wv-section__title">7-Day Forecast</h2>
         </header>
+        <div id="dailySkeleton" class="wv-daily-skeleton" aria-hidden="true">
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+        </div>
         <div class="wv-daily-list" id="dailyForecast" role="list" aria-label="Daily forecast items">
             <!-- Daily items populated by JS -->
         </div>
@@ -112,6 +142,12 @@
         <header class="wv-section__header">
             <h2 id="detailsTitle" class="wv-section__title">Weather Details</h2>
         </header>
+        <div id="detailsSkeleton" class="wv-details-skeleton" aria-hidden="true">
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+        </div>
         <div class="wv-details-grid" id="detailsGrid" role="list" aria-label="Weather detail cards">
             <!-- Detail cards populated by JS -->
         </div>

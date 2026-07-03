@@ -12,6 +12,7 @@ class WeatherApp {
         this.isLoading = false;
         this.currentCity = null;
         this.currentData = null;
+        this.scene = new WeatherScene(document.getElementById('wvScene'));
 
         this.init();
     }
@@ -439,6 +440,12 @@ class WeatherApp {
         // Weather icon
         const iconEl = document.getElementById('heroIcon');
         iconEl.className = `wv-hero-card__icon fas ${this.getWeatherIconClass(data.icon)}`;
+
+        // Dynamic background scene - day/night here tracks the searched location's actual
+        // sun state (from the icon suffix), independent of the user's manual dark-mode toggle.
+        if (this.scene) {
+            this.scene.applyWeatherIcon(data.icon);
+        }
 
         // Region
         const regionEl = document.querySelector('.wv-hero-card__region');
@@ -885,6 +892,9 @@ class WeatherApp {
     }
 
     toggleDarkMode(isDark) {
+        // Only affects UI chrome tokens (data-bs-theme). Deliberately does not touch
+        // #wvScene - the background scene's day/night state tracks real sun position
+        // at the searched location, not this manual toggle.
         const htmlElement = document.documentElement;
         const theme = isDark ? 'dark' : 'light';
 
@@ -930,11 +940,49 @@ class WeatherApp {
             locationButton.disabled = true;
             locationButton.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i>';
             clearButton.style.display = 'none';
+            this.announceToScreenReader('Loading weather data…');
         } else {
             searchInput.disabled = false;
             locationButton.disabled = false;
             locationButton.innerHTML = '<i class="fas fa-location-arrow" aria-hidden="true"></i><span>My Location</span>';
             this.toggleClearButton(searchInput.value);
+        }
+
+        this.setSkeletonsVisible(loading);
+    }
+
+    setSkeletonsVisible(loading) {
+        const skeletons = {
+            heroSkeleton: 'flex',
+            hourlySkeleton: 'flex',
+            dailySkeleton: 'flex',
+            detailsSkeleton: 'grid'
+        };
+        const sectionIds = ['heroCard', 'hourlySection', 'dailySection', 'detailsSection'];
+
+        if (loading) {
+            sectionIds.forEach(id => {
+                const section = document.getElementById(id);
+                if (section) section.style.display = 'block';
+            });
+            Object.entries(skeletons).forEach(([id, display]) => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = display;
+            });
+        } else {
+            Object.keys(skeletons).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+            // Only collapse sections back if this was the very first load and it
+            // failed - if we already have data (a prior success, or this refresh
+            // just succeeded), leave the real content showing.
+            if (!this.currentData) {
+                sectionIds.forEach(id => {
+                    const section = document.getElementById(id);
+                    if (section) section.style.display = 'none';
+                });
+            }
         }
     }
 
@@ -1078,7 +1126,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Service Worker registration for PWA
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/static/sw.js')
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .then(registration => {
                 console.log('SW registered: ', registration);
             })
