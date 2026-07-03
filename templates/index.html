@@ -1,159 +1,223 @@
 {% extends "base.html" %}
 
-{% block title %}Yash's Weather App - Current Weather & 5-Day Forecast{% endblock %}
+{% block title %}WeatherView - Current Weather & Forecast{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <!-- Current Weather Card -->
-        <div id="weatherCard" class="card weather-card mb-4" style="display: none;">
-            <div class="card-header bg-gradient">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-thermometer-half me-2"></i>
-                    Current Weather
-                </h5>
-            </div>
-            <div class="card-body">
-                <div id="currentWeather">
-                    <!-- Weather data will be populated by JavaScript -->
-                </div>
-            </div>
-        </div>
-        
-        <!-- 7-Day Forecast Card -->
-        <div id="dailyForecastCard" class="card weather-card mb-4" style="display: none;">
-            <div class="card-header bg-gradient">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-calendar-week me-2"></i>
-                    7-Day Forecast
-                </h5>
-            </div>
-            <div class="card-body">
-                <div id="dailyForecast" class="row">
-                    <!-- Daily forecast will be populated by JavaScript -->
-                </div>
-            </div>
-        </div>
-        
-        <!-- Air Quality & Visibility Card -->
-        <div id="airQualityCard" class="card weather-card mb-4" style="display: none;">
-            <div class="card-header bg-gradient">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-lungs me-2"></i>
-                    Air Quality & Visibility
-                </h5>
-            </div>
-            <div class="card-body">
-                <div id="airQualityData">
-                    <!-- Air quality data will be populated by JavaScript -->
-                </div>
-            </div>
-        </div>
-        
-        <!-- Hourly Temperature Chart -->
-        <div id="forecastCard" class="card weather-card mb-4" style="display: none;">
-            <div class="card-header bg-gradient">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-chart-line me-2"></i>
-                    Temperature Trend
-                </h5>
-            </div>
-            <div class="card-body">
-                <!-- Interactive Chart Instructions -->
-                <div class="alert alert-info alert-dismissible fade show" role="alert">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Interactive Chart:</strong> Hover over data points for details, or click any point to see more weather information.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                
-                <!-- Temperature Chart -->
-                <div class="chart-container mb-4">
-                    <canvas id="temperatureChart" 
-                            aria-label="Temperature forecast chart"
-                            role="img">
-                        <p>This chart shows the temperature forecast over time. If you cannot see the chart, please enable JavaScript or use a screen reader compatible browser.</p>
-                    </canvas>
-                </div>
-                
-                <!-- Forecast List -->
-                <div class="row" id="forecastList">
-                    <!-- Forecast items will be populated by JavaScript -->
-                </div>
-            </div>
-        </div>
-        
-        <!-- Welcome Message -->
-        <div id="welcomeMessage" class="text-center py-5">
-            <div class="row justify-content-center">
-                <div class="col-md-6">
-                    <i class="fas fa-cloud-sun fa-4x text-primary mb-3"></i>
-                    <h2 class="h4 mb-3">Welcome to Yash's Weather App</h2>
-                    <p class="text-muted mb-4">
-                        Get current weather conditions and 5-day forecasts for any city around the world.
-                    </p>
-                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-                        <button type="button" 
-                                class="btn btn-primary btn-lg px-4"
-                                onclick="document.getElementById('citySearch').focus()">
-                            <i class="fas fa-search me-2"></i>
-                            Search a City
-                        </button>
-                        <button type="button" 
-                                class="btn btn-outline-primary btn-lg px-4"
-                                onclick="app.getLocationWeather()">
-                            <i class="fas fa-location-arrow me-2"></i>
-                            Use My Location
-                        </button>
+<div class="wv-page">
+    <!-- Hero Weather Card -->
+    <section id="heroCard" class="wv-hero-card" style="display: none;" aria-labelledby="heroTitle">
+        <div class="wv-hero-card__inner glass-card">
+            <header class="wv-hero-card__header">
+                <div class="wv-hero-card__location">
+                    <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                    <div>
+                        <h1 id="heroTitle" class="wv-hero-card__city"></h1>
+                        <p class="wv-hero-card__region"></p>
                     </div>
-                    
-                    <div class="mt-4">
-                        <h6 class="text-muted">Features:</h6>
-                        <div class="row mt-3">
-                            <div class="col-md-4 mb-3">
-                                <i class="fas fa-map-marker-alt text-primary mb-2"></i>
-                                <p class="small mb-0">Location-based weather</p>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <i class="fas fa-chart-line text-primary mb-2"></i>
-                                <p class="small mb-0">Interactive charts</p>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <i class="fas fa-star text-primary mb-2"></i>
-                                <p class="small mb-0">Favorite cities</p>
-                            </div>
+                </div>
+                <div class="wv-hero-card__actions">
+                    <button type="button" class="wv-icon-btn glass-btn" id="favoriteToggle" aria-label="Add to favorites" aria-pressed="false">
+                        <i class="far fa-star" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="wv-icon-btn glass-btn" id="shareBtn" aria-label="Share weather">
+                        <i class="fas fa-share" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </header>
+            
+            <div class="wv-hero-card__main">
+                <div class="wv-hero-card__current">
+                    <div class="wv-hero-card__temp">
+                        <span id="heroTemp" class="wv-hero-card__temp-value"></span>
+                        <span class="wv-hero-card__temp-unit" id="heroTempUnit">°C</span>
+                    </div>
+                    <div class="wv-hero-card__condition">
+                        <i id="heroIcon" class="wv-hero-card__icon" aria-hidden="true"></i>
+                        <p id="heroDescription" class="wv-hero-card__desc"></p>
+                    </div>
+                    <div class="wv-hero-card__feels">
+                        <span>Feels like</span>
+                        <strong id="heroFeelsLike"></strong>
+                    </div>
+                </div>
+                
+                <div class="wv-hero-card__highlights">
+                    <div class="wv-highlight">
+                        <i class="fas fa-tint wv-highlight__icon" aria-hidden="true"></i>
+                        <div class="wv-highlight__content">
+                            <span class="wv-highlight__label">Humidity</span>
+                            <strong id="heroHumidity" class="wv-highlight__value"></strong>
+                        </div>
+                    </div>
+                    <div class="wv-highlight">
+                        <i class="fas fa-wind wv-highlight__icon" aria-hidden="true"></i>
+                        <div class="wv-highlight__content">
+                            <span class="wv-highlight__label">Wind</span>
+                            <strong id="heroWind" class="wv-highlight__value"></strong>
+                        </div>
+                    </div>
+                    <div class="wv-highlight">
+                        <i class="fas fa-compress-arrows-alt wv-highlight__icon" aria-hidden="true"></i>
+                        <div class="wv-highlight__content">
+                            <span class="wv-highlight__label">Pressure</span>
+                            <strong id="heroPressure" class="wv-highlight__value"></strong>
+                        </div>
+                    </div>
+                    <div class="wv-highlight">
+                        <i class="fas fa-eye wv-highlight__icon" aria-hidden="true"></i>
+                        <div class="wv-highlight__content">
+                            <span class="wv-highlight__label">Visibility</span>
+                            <strong id="heroVisibility" class="wv-highlight__value"></strong>
                         </div>
                     </div>
                 </div>
             </div>
+            
+            <footer class="wv-hero-card__footer">
+                <p class="wv-hero-card__updated" id="heroUpdated"></p>
+            </footer>
         </div>
-    </div>
+    </section>
+
+    <!-- Hourly Forecast Section -->
+    <section id="hourlySection" class="wv-section" style="display: none;" aria-labelledby="hourlyTitle">
+        <header class="wv-section__header">
+            <h2 id="hourlyTitle" class="wv-section__title">Hourly Forecast</h2>
+            <div class="wv-section__actions">
+                <button type="button" class="wv-btn wv-btn--ghost" id="hourlyPrev" aria-label="Previous hours">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="wv-btn wv-btn--ghost" id="hourlyNext" aria-label="Next hours">
+                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </button>
+            </div>
+        </header>
+        <div class="wv-hourly-scroll" id="hourlyScroll" role="list" aria-label="Hourly forecast items">
+            <!-- Hourly items populated by JS -->
+        </div>
+    </section>
+
+    <!-- Daily Forecast Section -->
+    <section id="dailySection" class="wv-section" style="display: none;" aria-labelledby="dailyTitle">
+        <header class="wv-section__header">
+            <h2 id="dailyTitle" class="wv-section__title">7-Day Forecast</h2>
+        </header>
+        <div class="wv-daily-list" id="dailyForecast" role="list" aria-label="Daily forecast items">
+            <!-- Daily items populated by JS -->
+        </div>
+    </section>
+
+    <!-- Weather Details Grid -->
+    <section id="detailsSection" class="wv-section" style="display: none;" aria-labelledby="detailsTitle">
+        <header class="wv-section__header">
+            <h2 id="detailsTitle" class="wv-section__title">Weather Details</h2>
+        </header>
+        <div class="wv-details-grid" id="detailsGrid" role="list" aria-label="Weather detail cards">
+            <!-- Detail cards populated by JS -->
+        </div>
+    </section>
+
+    <!-- Temperature Chart Section -->
+    <section id="chartSection" class="wv-section" style="display: none;" aria-labelledby="chartTitle">
+        <header class="wv-section__header">
+            <h2 id="chartTitle" class="wv-section__title">Temperature Trend</h2>
+        </header>
+        <div class="wv-chart-card glass-card">
+            <div class="wv-chart-card__body">
+                <canvas id="temperatureChart"
+                        aria-label="Temperature forecast chart over 5 days"
+                        role="img"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Favorites Section -->
+    <section id="favoritesSection" class="wv-section" style="display: none;" aria-labelledby="favoritesTitle">
+        <header class="wv-section__header">
+            <h2 id="favoritesTitle" class="wv-section__title">Favorite Cities</h2>
+            <button type="button" class="wv-btn wv-btn--ghost wv-btn--sm" id="manageFavorites" aria-label="Manage favorites">
+                <i class="fas fa-cog" aria-hidden="true"></i>
+                <span>Manage</span>
+            </button>
+        </header>
+        <div class="wv-favorites-list" id="favoritesList" role="list" aria-label="Favorite cities">
+            <!-- Favorites populated by JS -->
+        </div>
+    </section>
+
+    <!-- Empty/Welcome State -->
+    <section id="emptyState" class="wv-empty-state" aria-labelledby="emptyTitle">
+        <div class="wv-empty-state__inner glass-card">
+            <div class="wv-empty-state__icon">
+                <i class="fas fa-cloud-sun" aria-hidden="true"></i>
+            </div>
+            <h1 id="emptyTitle" class="wv-empty-state__title">Welcome to WeatherView</h1>
+            <p class="wv-empty-state__description">
+                Get current conditions and 5-day forecasts for any location worldwide.
+            </p>
+            <div class="wv-empty-state__actions">
+                <button type="button"
+                        class="wv-btn wv-btn--primary wv-btn--lg"
+                        onclick="document.getElementById('citySearch').focus()">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <span>Search a City</span>
+                </button>
+                <button type="button"
+                        class="wv-btn wv-btn--secondary glass-btn wv-btn--lg"
+                        onclick="app.getLocationWeather()">
+                    <i class="fas fa-location-arrow" aria-hidden="true"></i>
+                    <span>Use My Location</span>
+                </button>
+            </div>
+            <ul class="wv-empty-state__features" role="list">
+                <li>
+                    <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                    <span>Location-based weather</span>
+                </li>
+                <li>
+                    <i class="fas fa-chart-line" aria-hidden="true"></i>
+                    <span>Interactive charts</span>
+                </li>
+                <li>
+                    <i class="fas fa-star" aria-hidden="true"></i>
+                    <span>Favorite cities</span>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Error Toast Container -->
+    <div id="toastContainer" class="wv-toast-container" role="region" aria-label="Notifications" aria-live="polite"></div>
 </div>
 
-<!-- Hidden screen reader announcements -->
+<!-- Screen reader announcements -->
 <div aria-live="polite" aria-atomic="true" class="sr-only" id="srAnnouncements"></div>
 
 <script>
-// Hide welcome message when weather data is displayed
+// Hide empty state when weather data is displayed
 document.addEventListener('DOMContentLoaded', function() {
     const observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
             if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-                const weatherCard = document.getElementById('weatherCard');
-                const welcomeMessage = document.getElementById('welcomeMessage');
+                const heroCard = document.getElementById('heroCard');
+                const emptyState = document.getElementById('emptyState');
                 
-                if (weatherCard.style.display !== 'none') {
-                    welcomeMessage.style.display = 'none';
-                } else {
-                    welcomeMessage.style.display = 'block';
+                if (heroCard && heroCard.style.display !== 'none') {
+                    emptyState.style.display = 'none';
+                } else if (heroCard && heroCard.style.display === 'none') {
+                    emptyState.style.display = 'flex';
                 }
             }
         });
     });
-    
-    observer.observe(document.getElementById('weatherCard'), {
-        attributes: true,
-        attributeFilter: ['style']
-    });
+
+    const heroCard = document.getElementById('heroCard');
+    if (heroCard) {
+        observer.observe(heroCard, {
+            attributes: true,
+            attributeFilter: ['style']
+        });
+    }
 });
 </script>
 {% endblock %}

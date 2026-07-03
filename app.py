@@ -22,6 +22,8 @@ app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-prod
 # Initialize services
 weather_api = WeatherAPI()
 cache = Cache(ttl=600)  # 10 minutes TTL
+search_cache = Cache(ttl=300)  # 5 minutes TTL for location search results
+aqi_cache = Cache(ttl=1800)  # 30 minutes TTL for air quality data
 
 @app.route('/')
 def index():
@@ -145,18 +147,17 @@ def search_locations():
         
         # Cache search results briefly (5 minutes)
         cache_key = f"search:{query.lower()}"
-        cached_data = cache.get(cache_key)
+        cached_data = search_cache.get(cache_key)
         if cached_data:
             logger.info(f"Cache hit for search: {query}")
             return jsonify(cached_data)
-        
+
         logger.info(f"Cache miss for search: {query}")
-        
+
         # Search for locations
         locations = weather_api.search_locations(query.strip(), limit=8)
-        
+
         # Cache the results
-        search_cache = Cache(ttl=300)  # 5 minutes for search results
         search_cache.set(cache_key, locations)
         
         return jsonify(locations)
@@ -186,18 +187,17 @@ def get_air_quality():
         
         # Cache air quality data briefly (30 minutes)
         cache_key = f"aqi:{lat},{lon}"
-        cached_data = cache.get(cache_key)
+        cached_data = aqi_cache.get(cache_key)
         if cached_data:
             logger.info(f"Cache hit for air quality: {lat},{lon}")
             return jsonify(cached_data)
-        
+
         logger.info(f"Cache miss for air quality: {lat},{lon}")
-        
+
         # Fetch air quality data
         data = weather_api.get_air_pollution(lat_float, lon_float)
-        
+
         # Cache the results for 30 minutes
-        aqi_cache = Cache(ttl=1800)  # 30 minutes
         aqi_cache.set(cache_key, data)
         
         return jsonify(data)

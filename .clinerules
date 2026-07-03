@@ -4,7 +4,7 @@
 
 Before beginning any implementation:
 
-1. Read docs/weatherview2.0design.md
+1. Read docs/product-design-spec.md
 2. Understand the existing codebase.
 3. Explain your implementation plan.
 4. Wait for approval before modifying files.
