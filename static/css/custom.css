@@ -840,6 +840,70 @@ body {
   justify-content: center;
 }
 
+.wv-nav-badge--tab {
+  position: absolute;
+  top: -4px;
+  right: -10px;
+  min-width: 16px;
+  height: 16px;
+  font-size: 10px;
+  margin-left: 0;
+}
+
+/* Bottom tab bar - phone-only primary navigation, fully replacing the
+   sidebar/drawer below 768px (see the display:none override there). A
+   distinct component, not a media-query variant of .wv-sidebar. */
+.wv-tab-bar {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--wv-z-sticky);
+  background: var(--wv-glass-text-scrim-light);
+  backdrop-filter: blur(var(--wv-glass-blur)) saturate(var(--wv-glass-saturate));
+  -webkit-backdrop-filter: blur(var(--wv-glass-blur)) saturate(var(--wv-glass-saturate));
+  border-top: 1px solid var(--wv-glass-border-light);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+[data-bs-theme="dark"] .wv-tab-bar {
+  background: var(--wv-glass-text-scrim-dark);
+  border-top-color: var(--wv-glass-border-dark);
+}
+
+.wv-tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wv-space-1);
+  flex: 1;
+  padding: var(--wv-space-2) 0;
+  height: 64px;
+  color: var(--wv-color-text-secondary);
+  text-decoration: none;
+  font-size: var(--wv-text-xs);
+  font-weight: var(--wv-font-weight-medium);
+  transition: color var(--wv-transition-fast);
+}
+
+.wv-tab-item--active {
+  color: var(--wv-color-accent);
+}
+
+.wv-tab-item__icon-wrap {
+  position: relative;
+  font-size: var(--wv-text-lg);
+  line-height: 1;
+}
+
+@media (max-width: 767px) {
+  .wv-tab-bar {
+    display: flex;
+  }
+}
+
 /* Mobile nav hamburger + drawer backdrop (hidden on desktop; shown at the
    same <=1024px breakpoint where .wv-sidebar becomes an off-canvas drawer) */
 .wv-nav-toggle {
@@ -1304,9 +1368,27 @@ body {
   .wv-content {
     padding: var(--wv-space-4);
   }
+}
+
+/* Phone band: strictly narrower than the 768px tablet checkpoint, so the
+   drawer (via hamburger) still shows at exactly 768/820px in testing, and
+   the tab bar picks up immediately below it with no gap where neither
+   nav surface is visible. Two competing nav affordances on a phone-sized
+   screen is worse than one, so the hamburger/sidebar are hidden entirely
+   here, not just collapsed off-canvas. */
+@media (max-width: 767px) {
+  .wv-content {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + var(--wv-space-4));
+  }
+
+  .wv-nav-toggle,
+  .wv-sidebar,
+  .wv-sidebar-backdrop {
+    display: none !important;
+  }
 
   .wv-footer {
-    padding: var(--wv-space-4);
+    display: none;
   }
 }
 
@@ -1933,8 +2015,10 @@ body {
 .wv-empty-state {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: var(--wv-space-6);
   padding: var(--wv-space-12) var(--wv-space-6);
 }
 
@@ -2615,6 +2699,33 @@ body {
   gap: var(--wv-space-4);
 }
 
+/* Today page's fresh-visit preview - reuses .wv-comparison-card styling
+   since it's the same "mini city weather tile" shape, just clickable and
+   width-capped to sit under the welcome card instead of spanning the page. */
+.wv-popular-cities {
+  width: 100%;
+  max-width: 640px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--wv-space-3);
+}
+
+.wv-popular-cities .wv-comparison-card {
+  display: block;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+  border: none;
+  font: inherit;
+  color: inherit;
+  transition: transform var(--wv-transition-fast), box-shadow var(--wv-transition-fast);
+}
+
+.wv-popular-cities .wv-comparison-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--wv-shadow-md);
+}
+
 .wv-comparison-card {
   padding: var(--wv-card-padding);
 }
@@ -2657,6 +2768,14 @@ body[data-page="map"] .wv-content {
 @media (max-width: 768px) {
   .wv-map-section {
     height: calc(100vh - 180px);
+  }
+}
+
+@media (max-width: 767px) {
+  .wv-map-section {
+    /* Additionally leaves room for the bottom tab bar (64px + safe-area),
+       which only appears strictly below the 768px tablet checkpoint. */
+    height: calc(100vh - 180px - 64px - env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -2706,6 +2825,72 @@ body[data-page="map"] .wv-content {
 
   .wv-map-layer-btn span {
     display: none;
+  }
+}
+
+.wv-map-legend {
+  position: absolute;
+  bottom: var(--wv-space-4);
+  left: var(--wv-space-4);
+  z-index: var(--wv-z-dropdown);
+  padding: var(--wv-space-3) var(--wv-space-4);
+  min-width: 180px;
+}
+
+.wv-map-legend__title {
+  margin: 0 0 var(--wv-space-2);
+  font-size: var(--wv-text-xs);
+  font-weight: var(--wv-font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--wv-color-text-secondary);
+}
+
+.wv-map-legend__bar {
+  height: 8px;
+  border-radius: var(--wv-radius-full);
+}
+
+.wv-map-legend__labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--wv-space-1);
+  font-size: var(--wv-text-xs);
+  color: var(--wv-color-text-tertiary);
+}
+
+.wv-map-loading {
+  position: absolute;
+  top: var(--wv-space-4);
+  left: var(--wv-space-4);
+  z-index: var(--wv-z-dropdown);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wv-color-accent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--wv-transition-fast);
+}
+
+.wv-map-loading.is-active {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .wv-map-legend {
+    bottom: auto;
+    top: var(--wv-space-4);
+    left: var(--wv-space-4);
+    min-width: 140px;
+  }
+
+  .wv-map-loading {
+    top: var(--wv-space-4);
+    right: var(--wv-space-4);
+    left: auto;
   }
 }
 

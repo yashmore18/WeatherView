@@ -7,12 +7,16 @@ class TodayPage {
         this.wv = wv;
         this.currentCity = null;
         this.currentData = null;
+        this.lastUpdatedAt = null;
 
         this.setupEventListeners();
         this.loadInitialCity();
+        if (!this.wv.getResolvedCity()) this.loadPopularCities();
 
         document.addEventListener('wv:cityselected', (e) => this.handleCitySelected(e.detail));
         document.addEventListener('wv:unitschange', () => this.refresh());
+
+        setInterval(() => this.refreshUpdatedLabel(), 60000);
     }
 
     setupEventListeners() {
@@ -114,7 +118,6 @@ class TodayPage {
 
     renderAlerts(alerts) {
         const container = document.getElementById('alertsContainer');
-        const badge = document.getElementById('alertsBadge');
         if (!container) return;
 
         const dismissed = this.getDismissedAlerts();
@@ -145,28 +148,29 @@ class TodayPage {
             });
         });
 
-        this.setBadgeCount(badge, visible.length);
+        this.setBadgeCount(visible.length);
     }
 
     updateBadge() {
-        const badge = document.getElementById('alertsBadge');
         const container = document.getElementById('alertsContainer');
         if (!container) return;
-        this.setBadgeCount(badge, container.querySelectorAll('.wv-alert-banner').length);
+        this.setBadgeCount(container.querySelectorAll('.wv-alert-banner').length);
     }
 
-    setBadgeCount(badge, count) {
+    setBadgeCount(count) {
         // Persisted so wv-shared.js can show the same count on other pages
-        // (the sidebar's Today badge) without those pages computing alerts.
+        // (the sidebar's and tab bar's Today badges) without those pages
+        // computing alerts themselves.
         localStorage.setItem('wv_alertCount', String(count));
-        if (badge) {
+        [document.getElementById('alertsBadge'), document.getElementById('alertsBadgeMobile')].forEach(badge => {
+            if (!badge) return;
             if (count > 0) {
                 badge.textContent = count;
                 badge.style.display = 'flex';
             } else {
                 badge.style.display = 'none';
             }
-        }
+        });
     }
 
     showHero() {
@@ -191,10 +195,9 @@ class TodayPage {
     displayHeroCard(data) {
         const tempUnit = this.wv.currentUnits === 'imperial' ? '°F' : '°C';
         const windUnit = this.wv.currentUnits === 'imperial' ? 'mph' : 'm/s';
-        const localTime = new Date(data.local_time_iso).toLocaleString();
 
         document.getElementById('heroTitle').textContent = data.city;
-        document.getElementById('heroTemp').textContent = Math.round(data.temp);
+        this.animateTemperature(document.getElementById('heroTemp'), Math.round(data.temp));
         document.getElementById('heroTempUnit').textContent = tempUnit;
         document.getElementById('heroDescription').textContent = data.description;
         document.getElementById('heroFeelsLike').textContent = `${Math.round(data.feels_like)}${tempUnit}`;
@@ -202,7 +205,9 @@ class TodayPage {
         document.getElementById('heroWind').textContent = `${data.wind_speed} ${windUnit}`;
         document.getElementById('heroPressure').textContent = `${data.pressure} hPa`;
         document.getElementById('heroVisibility').textContent = `${data.visibility} km`;
-        document.getElementById('heroUpdated').textContent = `Updated ${localTime}`;
+
+        this.lastUpdatedAt = Date.now();
+        this.refreshUpdatedLabel();
 
         const iconEl = document.getElementById('heroIcon');
         iconEl.className = `wv-hero-card__icon fas ${this.wv.getWeatherIconClass(data.icon)}`;
@@ -215,6 +220,75 @@ class TodayPage {
 
         const regionEl = document.querySelector('.wv-hero-card__region');
         if (regionEl) regionEl.textContent = `${data.country}${data.state ? ', ' + data.state : ''}`;
+    }
+
+    refreshUpdatedLabel() {
+        const el = document.getElementById('heroUpdated');
+        if (!el || !this.lastUpdatedAt) return;
+        const diffMin = Math.floor((Date.now() - this.lastUpdatedAt) / 60000);
+        if (diffMin < 1) {
+            el.textContent = 'Updated just now';
+        } else if (diffMin < 60) {
+            el.textContent = `Updated ${diffMin}m ago`;
+        } else if (this.currentData) {
+            el.textContent = `Updated ${new Date(this.currentData.local_time_iso).toLocaleString()}`;
+        }
+    }
+
+    animateTemperature(el, target) {
+        if (!el) return;
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReducedMotion) {
+            el.textContent = target;
+            return;
+        }
+        const duration = 500;
+        const startTime = performance.now();
+        const step = (now) => {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            el.textContent = Math.round(target * eased);
+            if (progress < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+    }
+
+    async loadPopularCities() {
+        const container = document.getElementById('popularCitiesPreview');
+        if (!container) return;
+
+        const cities = ['London', 'New York', 'Tokyo', 'Sydney'];
+        const tempUnit = this.wv.currentUnits === 'imperial' ? '°F' : '°C';
+
+        container.innerHTML = cities.map(() => `
+            <div class="wv-comparison-card glass-card">
+                <div class="wv-skeleton wv-skeleton--text" style="width: 60%;"></div>
+                <div class="wv-skeleton wv-skeleton--block" style="height: 32px; margin-top: var(--wv-space-2);"></div>
+            </div>
+        `).join('');
+
+        const results = await Promise.allSettled(
+            cities.map(city => this.wv.fetchCurrentWeather({ city, units: this.wv.currentUnits }))
+        );
+
+        container.innerHTML = results.map((result, i) => {
+            if (result.status !== 'fulfilled') return '';
+            const data = result.value;
+            return `
+                <button type="button" class="wv-comparison-card glass-card" data-city="${this.wv.escapeHtml(data.city)}">
+                    <p class="wv-comparison-card__city">${this.wv.escapeHtml(data.city)}</p>
+                    <div class="wv-comparison-card__temp">
+                        <i class="fas ${this.wv.getWeatherIconClass(data.icon)}" aria-hidden="true"></i>
+                        ${Math.round(data.temp)}${tempUnit}
+                    </div>
+                    <p class="wv-comparison-card__desc">${data.description}</p>
+                </button>
+            `;
+        }).join('');
+
+        container.querySelectorAll('[data-city]').forEach(card => {
+            card.addEventListener('click', () => this.wv.dispatchCitySelected({ city: card.dataset.city }));
+        });
     }
 
     updateFavoriteButton() {

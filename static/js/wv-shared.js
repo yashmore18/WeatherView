@@ -82,13 +82,14 @@ class WVShared {
     // the sidebar's Today link, so it's visible even on other pages - this
     // page doesn't recompute alerts itself, only reads the cached count.
     initAlertsBadge() {
-        const badge = document.getElementById('alertsBadge');
-        if (!badge || document.body.dataset.page === 'today') return;
+        if (document.body.dataset.page === 'today') return;
         const count = parseInt(localStorage.getItem('wv_alertCount') || '0', 10);
-        if (count > 0) {
+        if (count <= 0) return;
+        [document.getElementById('alertsBadge'), document.getElementById('alertsBadgeMobile')].forEach(badge => {
+            if (!badge) return;
             badge.textContent = count;
             badge.style.display = 'flex';
-        }
+        });
     }
 
     // ---- City resolution (shared across all page modules) ----
@@ -399,6 +400,14 @@ class WVShared {
         });
         sidebar.querySelectorAll('.wv-nav-item').forEach(a => {
             a.addEventListener('click', () => closeDrawer());
+        });
+
+        // The drawer is hidden entirely below 767px (the tab bar takes over),
+        // but if a user resizes the window down while it's open (rather than
+        // reloading at a new width), force it closed rather than leaving an
+        // invisible-but-open drawer state behind.
+        window.matchMedia('(max-width: 767px)').addEventListener('change', (e) => {
+            if (e.matches) closeDrawer();
         });
     }
 

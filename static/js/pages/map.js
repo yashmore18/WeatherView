@@ -1,20 +1,49 @@
 /**
  * WeatherView - Map page
- * Interactive weather radar: OpenStreetMap base tiles + OpenWeatherMap
+ * Interactive weather radar: CartoDB base tiles + OpenWeatherMap
  * precipitation/clouds/temperature/wind overlays, proxied through
  * /api/map/tile/... so the API key never reaches the browser.
+ *
+ * Base tiles use CartoDB's keyless Positron/Dark Matter styles (muted,
+ * near-monochrome) instead of full-color OpenStreetMap - colored weather
+ * overlays are otherwise nearly invisible against OSM's own saturated
+ * greens/creams, which is why the layers used to look "broken".
  */
 class MapPage {
+    static LEGEND_CONFIG = {
+        precipitation: {
+            title: 'Precipitation',
+            gradient: 'linear-gradient(to right, rgba(120,180,255,0.2), #4f7cff, #2952cc, #7b2ff7)',
+            min: 'Light', max: 'Heavy'
+        },
+        clouds: {
+            title: 'Cloud Cover',
+            gradient: 'linear-gradient(to right, rgba(255,255,255,0.15), #cfd8e3, #8894a6)',
+            min: '0%', max: '100%'
+        },
+        temp: {
+            title: 'Temperature',
+            gradient: 'linear-gradient(to right, #2952cc, #4fd1c5, #f5d76e, #f57c4f, #c0392b)',
+            min: 'Cold', max: 'Hot'
+        },
+        wind: {
+            title: 'Wind Speed',
+            gradient: 'linear-gradient(to right, rgba(255,255,255,0.2), #b39ddb, #7e57c2, #4527a0)',
+            min: 'Calm', max: 'Strong'
+        }
+    };
+
     constructor(wv) {
         this.wv = wv;
         this.map = null;
         this.marker = null;
         this.activeLayer = null;
+        this.baseLayer = null;
         this.overlays = {
-            precipitation: L.tileLayer('/api/map/tile/precipitation_new/{z}/{x}/{y}', { opacity: 0.65, maxZoom: 19 }),
-            clouds: L.tileLayer('/api/map/tile/clouds_new/{z}/{x}/{y}', { opacity: 0.65, maxZoom: 19 }),
-            temp: L.tileLayer('/api/map/tile/temp_new/{z}/{x}/{y}', { opacity: 0.65, maxZoom: 19 }),
-            wind: L.tileLayer('/api/map/tile/wind_new/{z}/{x}/{y}', { opacity: 0.65, maxZoom: 19 })
+            precipitation: L.tileLayer('/api/map/tile/precipitation_new/{z}/{x}/{y}', { opacity: 0.75, maxZoom: 19 }),
+            clouds: L.tileLayer('/api/map/tile/clouds_new/{z}/{x}/{y}', { opacity: 0.55, maxZoom: 19 }),
+            temp: L.tileLayer('/api/map/tile/temp_new/{z}/{x}/{y}', { opacity: 0.6, maxZoom: 19 }),
+            wind: L.tileLayer('/api/map/tile/wind_new/{z}/{x}/{y}', { opacity: 0.8, maxZoom: 19 })
         };
 
         this.initMap();
@@ -23,14 +52,25 @@ class MapPage {
         this.loadInitialCity();
 
         document.addEventListener('wv:cityselected', (e) => this.handleCitySelected(e.detail));
+        document.addEventListener('wv:themechange', (e) => this.setBasemap(e.detail.isDark));
     }
 
     initMap() {
         this.map = L.map('wvMap', { zoomControl: true }).setView([20, 0], 2);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        this.setBasemap(isDark);
+    }
+
+    setBasemap(isDark) {
+        if (this.baseLayer) this.map.removeLayer(this.baseLayer);
+        const style = isDark ? 'dark_all' : 'light_all';
+        this.baseLayer = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`, {
+            attribution: '&copy; OpenStreetMap contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
             maxZoom: 19
-        }).addTo(this.map);
+        });
+        this.baseLayer.addTo(this.map);
+        this.baseLayer.bringToBack();
     }
 
     setupLayerButtons() {
@@ -42,12 +82,33 @@ class MapPage {
     setLayer(name) {
         if (this.activeLayer) this.map.removeLayer(this.activeLayer);
         this.activeLayer = this.overlays[name];
+
+        const loadingEl = document.getElementById('mapLoading');
+        if (loadingEl) loadingEl.classList.add('is-active');
+        this.activeLayer.once('load', () => {
+            if (loadingEl) loadingEl.classList.remove('is-active');
+        });
         this.activeLayer.addTo(this.map);
 
         document.querySelectorAll('.wv-map-layer-btn').forEach(btn => {
-            const isActive = btn.dataset.layer === name;
-            btn.setAttribute('aria-pressed', isActive);
+            btn.setAttribute('aria-pressed', btn.dataset.layer === name);
         });
+
+        this.renderLegend(name);
+    }
+
+    renderLegend(name) {
+        const legend = document.getElementById('mapLegend');
+        const config = MapPage.LEGEND_CONFIG[name];
+        if (!legend || !config) return;
+        legend.innerHTML = `
+            <p class="wv-map-legend__title">${config.title}</p>
+            <div class="wv-map-legend__bar" style="background: ${config.gradient};"></div>
+            <div class="wv-map-legend__labels">
+                <span>${config.min}</span>
+                <span>${config.max}</span>
+            </div>
+        `;
     }
 
     loadInitialCity() {
@@ -62,6 +123,7 @@ class MapPage {
                 : { lat: detail.lat, lon: detail.lon, units: this.wv.currentUnits };
             const data = await this.wv.fetchCurrentWeather(params);
             this.wv.setLastCity(data.city);
+            if (this.wv.scene) this.wv.scene.applyWeatherIcon(data.icon);
             this.centerOn(data.lat, data.lon, data.city);
         } catch (error) {
             this.wv.showError(error.message);

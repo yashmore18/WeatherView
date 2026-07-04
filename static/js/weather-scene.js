@@ -18,7 +18,10 @@ class WeatherScene {
     };
 
     static PARTICLE_BUDGET = {
-        'clear': 0,
+        // Daytime "clear" still gets a couple of slow decorative clouds so the
+        // scene is never fully static/inert before any real weather is loaded
+        // (night "clear" already has twinkling stars, handled separately).
+        'clear': 4,
         'partly-cloudy': 5,
         'cloudy': 6,
         'rain': 220,
@@ -185,7 +188,7 @@ class WeatherScene {
             return;
         }
 
-        if (condition === 'partly-cloudy' || condition === 'cloudy') {
+        if (condition === 'partly-cloudy' || condition === 'cloudy' || (condition === 'clear' && !this.isNight)) {
             const cloudCount = budget;
             for (let i = 0; i < cloudCount; i++) {
                 this.clouds.push({
@@ -244,7 +247,7 @@ class WeatherScene {
                 this.ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
                 this.ctx.fill();
             });
-        } else if (this.condition === 'partly-cloudy' || this.condition === 'cloudy') {
+        } else if (this.condition === 'partly-cloudy' || this.condition === 'cloudy' || (this.condition === 'clear' && !this.isNight)) {
             this.clouds.forEach(cloud => {
                 cloud.x += cloud.speed * dt;
                 if (cloud.x - 120 * cloud.scale > this.width) cloud.x = -120 * cloud.scale;
@@ -301,7 +304,7 @@ class WeatherScene {
                 this.ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
                 this.ctx.fill();
             });
-        } else if (this.condition === 'partly-cloudy' || this.condition === 'cloudy') {
+        } else if (this.condition === 'partly-cloudy' || this.condition === 'cloudy' || (this.condition === 'clear' && !this.isNight)) {
             this.clouds.forEach(cloud => this._drawCloud(cloud.x, cloud.y, cloud.scale, cloud.opacity));
         } else if (this.condition === 'snow') {
             this.ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';

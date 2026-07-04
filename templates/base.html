@@ -196,6 +196,35 @@
         </div>
     </footer>
 
+    <!-- Bottom Tab Bar (phone widths only - fully replaces the sidebar/
+         drawer below 768px, see .wv-nav-toggle/.wv-sidebar display:none
+         at the same breakpoint) -->
+    <nav id="wvTabBar" class="wv-tab-bar" role="navigation" aria-label="Main navigation">
+        <a href="{{ url_for('index') }}" class="wv-tab-item{{ ' wv-tab-item--active' if active_page == 'today' else '' }}"{{ ' aria-current="page"' if active_page == 'today' else '' }}>
+            <span class="wv-tab-item__icon-wrap">
+                <i class="fas fa-home" aria-hidden="true"></i>
+                <span id="alertsBadgeMobile" class="wv-nav-badge wv-nav-badge--tab" style="display: none;" aria-hidden="true"></span>
+            </span>
+            <span class="wv-tab-item__label">Today</span>
+        </a>
+        <a href="{{ url_for('forecast_page') }}" class="wv-tab-item{{ ' wv-tab-item--active' if active_page == 'forecast' else '' }}"{{ ' aria-current="page"' if active_page == 'forecast' else '' }}>
+            <span class="wv-tab-item__icon-wrap"><i class="fas fa-calendar-week" aria-hidden="true"></i></span>
+            <span class="wv-tab-item__label">Forecast</span>
+        </a>
+        <a href="{{ url_for('map_page') }}" class="wv-tab-item{{ ' wv-tab-item--active' if active_page == 'map' else '' }}"{{ ' aria-current="page"' if active_page == 'map' else '' }}>
+            <span class="wv-tab-item__icon-wrap"><i class="fas fa-cloud-showers-heavy" aria-hidden="true"></i></span>
+            <span class="wv-tab-item__label">Map</span>
+        </a>
+        <a href="{{ url_for('locations_page') }}" class="wv-tab-item{{ ' wv-tab-item--active' if active_page == 'locations' else '' }}"{{ ' aria-current="page"' if active_page == 'locations' else '' }}>
+            <span class="wv-tab-item__icon-wrap"><i class="fas fa-map-marker-alt" aria-hidden="true"></i></span>
+            <span class="wv-tab-item__label">Locations</span>
+        </a>
+        <a href="{{ url_for('settings_page') }}" class="wv-tab-item{{ ' wv-tab-item--active' if active_page == 'settings' else '' }}"{{ ' aria-current="page"' if active_page == 'settings' else '' }}>
+            <span class="wv-tab-item__icon-wrap"><i class="fas fa-cog" aria-hidden="true"></i></span>
+            <span class="wv-tab-item__label">Settings</span>
+        </a>
+    </nav>
+
     <!-- Hidden screen reader announcements -->
     <div aria-live="polite" aria-atomic="true" class="sr-only" id="srAnnouncements"></div>
 
