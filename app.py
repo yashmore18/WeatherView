@@ -138,6 +138,15 @@ def _set_security_headers(response):
     return response
 
 
+@app.route('/healthz')
+@limiter.exempt
+def healthz():
+    """Liveness check for the hosting platform (e.g. Koyeb) - deliberately
+    doesn't touch the cache or OpenWeatherMap, just confirms the process is
+    up and serving requests. Exempt from rate limiting since the platform
+    calls this on its own schedule, independent of real traffic."""
+    return jsonify({'status': 'ok'})
+
 @app.route('/')
 def index():
     """Render the Today page (current conditions hero + smart alerts)."""
