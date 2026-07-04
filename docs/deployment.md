@@ -24,10 +24,10 @@ limiting.
 2. Create a monitor/job hitting `https://<your-render-app>.onrender.com/healthz`
    every 10 minutes (comfortably under Render's ~15-minute sleep timeout,
    with margin).
-3. In the Render service's environment variables, set `BEHIND_PROXY=true`.
-   Render's own edge proxies every request to the app, so without this,
-   flask-limiter's per-IP rate limit would see every visitor - and the
-   keep-alive pinger - as the same address instead of their real IPs.
+3. No extra configuration needed for the rate limiter to see real client
+   IPs on Render - `app.py` auto-detects Render's own `RENDER` environment
+   variable (set automatically on every Render service) and enables the
+   same proxy-IP handling that `BEHIND_PROXY=true` would on nginx/Koyeb.
 
 ### Why this is safe
 
