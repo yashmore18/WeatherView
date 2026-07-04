@@ -467,6 +467,17 @@
  * 6. BASE / RESET
  * ======================================== */
 
+/* No CSS framework is loaded (data-bs-theme is just a naming leftover, not
+   actual Bootstrap) - so nothing was ever setting border-box, and every
+   width:100% element with its own padding/border (inputs, buttons, cards)
+   rendered wider than its container by that padding/border amount. This is
+   the standard modern-CSS reset the rest of the stylesheet already assumes. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 /* Smooth theme transitions */
 *,
 *::before,
