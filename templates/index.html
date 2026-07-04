@@ -95,6 +95,60 @@
         </div>
     </section>
 
+    <!-- Condensed Hourly Preview -->
+    <section id="todayHourlySection" class="wv-section" style="display: none;" aria-labelledby="todayHourlyTitle">
+        <header class="wv-section__header">
+            <h2 id="todayHourlyTitle" class="wv-section__title">Next Hours</h2>
+            <div class="wv-section__actions">
+                <a href="{{ url_for('forecast_page') }}" class="wv-btn wv-btn--ghost wv-btn--sm">
+                    <span>Full Forecast</span>
+                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </a>
+            </div>
+        </header>
+        <div id="todayHourlySkeleton" class="wv-hourly-skeleton" aria-hidden="true">
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+        </div>
+        <div class="wv-hourly-scroll" id="todayHourlyScroll" role="list" aria-label="Upcoming hourly forecast"></div>
+    </section>
+
+    <!-- Today's Highlights -->
+    <section id="todayHighlightsSection" class="wv-section" style="display: none;" aria-labelledby="todayHighlightsTitle">
+        <header class="wv-section__header">
+            <h2 id="todayHighlightsTitle" class="wv-section__title">Highlights</h2>
+        </header>
+        <div id="todayHighlightsSkeleton" class="wv-details-skeleton" aria-hidden="true">
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+        </div>
+        <div class="wv-details-grid" id="todayHighlightsGrid" role="list" aria-label="Today's highlight cards"></div>
+    </section>
+
+    <!-- Quick links to other sections -->
+    <section id="todayQuicklinks" class="wv-section wv-quicklinks" style="display: none;" aria-label="Explore more">
+        <a class="wv-quicklink-card glass-card" href="{{ url_for('map_page') }}">
+            <div class="wv-quicklink-card__icon"><i class="fas fa-map-marked-alt" aria-hidden="true"></i></div>
+            <div class="wv-quicklink-card__text">
+                <p class="wv-quicklink-card__title">Weather Map</p>
+                <p class="wv-quicklink-card__desc">See precipitation, clouds & wind live</p>
+            </div>
+            <i class="fas fa-chevron-right wv-quicklink-card__chevron" aria-hidden="true"></i>
+        </a>
+        <a class="wv-quicklink-card glass-card" href="{{ url_for('locations_page') }}">
+            <div class="wv-quicklink-card__icon"><i class="fas fa-star" aria-hidden="true"></i></div>
+            <div class="wv-quicklink-card__text">
+                <p class="wv-quicklink-card__title">Saved Locations</p>
+                <p class="wv-quicklink-card__desc">Compare weather across your favorite cities</p>
+            </div>
+            <i class="fas fa-chevron-right wv-quicklink-card__chevron" aria-hidden="true"></i>
+        </a>
+    </section>
+
     <!-- Empty/Welcome State -->
     <section id="emptyState" class="wv-empty-state" aria-labelledby="emptyTitle">
         <div class="wv-empty-state__inner glass-card">

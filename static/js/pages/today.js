@@ -71,7 +71,7 @@ class TodayPage {
             this.displayHeroCard(data);
             this.showHero();
             this.updateFavoriteButton();
-            this.loadAlerts(params, data.lat, data.lon);
+            this.loadExtras(params, data.lat, data.lon);
         } catch (error) {
             this.wv.showError(error.message);
         } finally {
@@ -80,17 +80,172 @@ class TodayPage {
         }
     }
 
-    async loadAlerts(params, lat, lon) {
+    // Fetches forecast + air quality once and fans the result out to the
+    // hourly preview strip, the highlights grid, and smart alerts, rather
+    // than each of those making their own redundant requests.
+    async loadExtras(params, lat, lon) {
+        this.setExtrasSkeletonVisible(true);
         try {
             const [forecast, airQuality] = await Promise.all([
                 this.wv.fetchForecast(params),
                 (lat && lon) ? this.wv.fetchAirQuality(lat, lon).catch(() => null) : Promise.resolve(null)
             ]);
+            this.displayHourlyPreview(forecast);
+            this.displayHighlights(this.currentData, airQuality);
+
             const prefs = this.getAlertPrefs();
             const alerts = window.WVAlerts.computeAlerts(this.currentData, forecast, airQuality, prefs, this.wv.currentUnits);
             this.renderAlerts(alerts);
         } catch (error) {
-            console.warn('Smart alerts unavailable:', error);
+            console.warn('Smart alerts/highlights unavailable:', error);
+        } finally {
+            this.setExtrasSkeletonVisible(false);
+        }
+    }
+
+    setExtrasSkeletonVisible(loading) {
+        const sections = ['todayHourlySection', 'todayHighlightsSection', 'todayQuicklinks'];
+        const skeletons = { todayHourlySkeleton: 'flex', todayHighlightsSkeleton: 'grid' };
+
+        sections.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'block';
+        });
+        Object.entries(skeletons).forEach(([id, display]) => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = loading ? display : 'none';
+        });
+    }
+
+    displayHourlyPreview(data) {
+        const scroll = document.getElementById('todayHourlyScroll');
+        if (!scroll) return;
+        const tempUnit = this.wv.currentUnits === 'imperial' ? '°F' : '°C';
+        const hourlyData = data.hourly_forecast?.slice(0, 8) || [];
+
+        if (hourlyData.length === 0) {
+            scroll.innerHTML = '<p class="wv-empty-text" style="padding: var(--wv-space-4); color: var(--wv-color-text-tertiary);">No hourly data available</p>';
+            return;
+        }
+
+        scroll.innerHTML = hourlyData.map(hour => {
+            const date = new Date(hour.dt * 1000);
+            const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+            const precip = hour.pop ? Math.round(hour.pop * 100) : 0;
+            return `
+                <div class="wv-hourly-item" role="listitem">
+                    <span class="wv-hourly-item__time">${timeStr}</span>
+                    <i class="wv-hourly-item__icon fas ${this.wv.getWeatherIconClass(hour.icon)}" aria-hidden="true"></i>
+                    <span class="wv-hourly-item__temp">${Math.round(hour.temp)}${tempUnit}</span>
+                    ${precip > 0 ? `<span class="wv-hourly-item__precip"><i class="fas fa-tint" aria-hidden="true"></i>${precip}%</span>` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    displayHighlights(data, airData) {
+        const grid = document.getElementById('todayHighlightsGrid');
+        if (!grid || !data) return;
+        const windUnit = this.wv.currentUnits === 'imperial' ? 'mph' : 'm/s';
+
+        const sunrise = data.sunrise ? new Date(data.sunrise * 1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '--';
+        const sunset = data.sunset ? new Date(data.sunset * 1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '--';
+        let daylightPct = 0;
+        if (data.sunrise && data.sunset) {
+            const now = Date.now() / 1000;
+            daylightPct = Math.max(0, Math.min(1, (now - data.sunrise) / (data.sunset - data.sunrise))) * 100;
+        }
+
+        grid.innerHTML = `
+            <article class="wv-detail-card wv-detail-card--aqi" role="listitem">
+                <header class="wv-detail-card__header">
+                    <div class="wv-detail-card__icon" aria-hidden="true"><i class="fas fa-lungs"></i></div>
+                    <h3 class="wv-detail-card__title">Air Quality</h3>
+                </header>
+                <div class="wv-detail-card__body">
+                    <div class="wv-detail-card__value" id="todayAqiValue">--</div>
+                    <p class="wv-detail-card__subtitle" id="todayAqiSubtitle">Loading…</p>
+                </div>
+                <div class="wv-aqi-bar"><div class="wv-aqi-bar__fill" id="todayAqiBarFill"></div></div>
+            </article>
+
+            <article class="wv-detail-card" role="listitem">
+                <header class="wv-detail-card__header">
+                    <div class="wv-detail-card__icon" aria-hidden="true"><i class="fas fa-sun"></i></div>
+                    <h3 class="wv-detail-card__title">Daylight</h3>
+                </header>
+                <div class="wv-daylight-track">
+                    <div class="wv-daylight-track__fill" style="width: ${daylightPct}%;"></div>
+                    <div class="wv-daylight-sun" style="left: ${daylightPct}%;"><i class="fas fa-sun" aria-hidden="true"></i></div>
+                </div>
+                <div class="wv-daylight-times">
+                    <span><i class="fas fa-arrow-up" aria-hidden="true"></i>${sunrise}</span>
+                    <span><i class="fas fa-arrow-down" aria-hidden="true"></i>${sunset}</span>
+                </div>
+            </article>
+
+            <article class="wv-detail-card" role="listitem">
+                <header class="wv-detail-card__header">
+                    <div class="wv-detail-card__icon" aria-hidden="true"><i class="fas fa-wind"></i></div>
+                    <h3 class="wv-detail-card__title">Wind</h3>
+                </header>
+                <div class="wv-wind-card__body">
+                    <div class="wv-compass">
+                        <div class="wv-compass__needle" style="transform: rotate(${data.wind_deg || 0}deg);"><i class="fas fa-location-arrow" aria-hidden="true"></i></div>
+                        <span class="wv-compass__label wv-compass__label--n">N</span>
+                        <span class="wv-compass__label wv-compass__label--e">E</span>
+                        <span class="wv-compass__label wv-compass__label--s">S</span>
+                        <span class="wv-compass__label wv-compass__label--w">W</span>
+                    </div>
+                    <div class="wv-detail-card__body">
+                        <div class="wv-detail-card__value">${data.wind_speed} ${windUnit}</div>
+                        <p class="wv-detail-card__subtitle">${data.wind_deg || 0}° ${this.wv.getWindDirection(data.wind_deg || 0)}</p>
+                    </div>
+                </div>
+            </article>
+
+            <article class="wv-detail-card" role="listitem">
+                <header class="wv-detail-card__header">
+                    <div class="wv-detail-card__icon" aria-hidden="true"><i class="fas fa-cloud"></i></div>
+                    <h3 class="wv-detail-card__title">Cloud Cover</h3>
+                </header>
+                <div class="wv-detail-card__body">
+                    <div class="wv-detail-card__value">${data.clouds || 0}%</div>
+                    <p class="wv-detail-card__subtitle">${data.clouds >= 70 ? 'Mostly cloudy' : data.clouds >= 30 ? 'Partly cloudy' : 'Mostly clear'}</p>
+                </div>
+                <div class="wv-aqi-bar"><div class="wv-aqi-bar__fill" style="width: ${data.clouds || 0}%; background: var(--wv-color-accent);"></div></div>
+            </article>
+        `;
+
+        this.displayAirQuality(airData);
+    }
+
+    displayAirQuality(airData) {
+        const aqiValueEl = document.getElementById('todayAqiValue');
+        const aqiSubtitleEl = document.getElementById('todayAqiSubtitle');
+        const aqiBarFill = document.getElementById('todayAqiBarFill');
+        if (!aqiValueEl || !aqiSubtitleEl) return;
+
+        if (!airData) {
+            aqiValueEl.textContent = 'N/A';
+            aqiSubtitleEl.textContent = 'Not available';
+            aqiValueEl.style.color = 'var(--wv-color-text-primary)';
+            return;
+        }
+
+        const aqi = airData.aqi || 1;
+        const aqiLabels = { 1: 'Good', 2: 'Fair', 3: 'Moderate', 4: 'Poor', 5: 'Very Poor' };
+        const aqiColors = {
+            1: 'var(--wv-color-success)', 2: 'var(--wv-color-warning)', 3: 'var(--wv-color-warning)',
+            4: 'var(--wv-color-error)', 5: 'var(--wv-color-error)'
+        };
+
+        aqiValueEl.textContent = aqi;
+        aqiSubtitleEl.textContent = aqiLabels[aqi] || 'Unknown';
+        aqiValueEl.style.color = aqiColors[aqi] || 'var(--wv-color-text-primary)';
+        if (aqiBarFill) {
+            aqiBarFill.style.width = `${(aqi / 5) * 100}%`;
+            aqiBarFill.style.background = aqiColors[aqi] || 'var(--wv-color-accent)';
         }
     }
 
