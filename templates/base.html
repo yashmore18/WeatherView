@@ -9,7 +9,8 @@
     <title>{% block title %}WeatherView{% endblock %}</title>
 
     <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌤️</text></svg>">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='icons/favicon-16.png') }}">
 
     <!-- Inter (app default font) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,7 +33,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="WeatherView">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%232563eb' rx='24'/><text x='96' y='140' font-size='100' text-anchor='middle' fill='white'>🌤️</text></svg>">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon-180.png') }}">
 
     <!-- Open Graph meta tags -->
     <meta property="og:title" content="WeatherView">
@@ -42,6 +43,31 @@
     {% block head %}{% endblock %}
 </head>
 <body data-page="{{ active_page }}">
+    <!-- Install splash screen: shown only on a cold launch of the installed
+         (standalone) PWA, once per session - not on every in-app page
+         navigation. Inline script runs synchronously, before layout/paint
+         of the rest of the page, so there's no flash of the real UI first. -->
+    <div id="wvSplash" class="wv-splash" aria-hidden="true">
+        <img class="wv-splash__mark" src="{{ url_for('static', filename='icons/icon-512.png') }}" alt="" width="96" height="96">
+        <p class="wv-splash__title">WeatherView</p>
+    </div>
+    <script>
+        (function () {
+            var el = document.getElementById('wvSplash');
+            var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            var alreadyShown = sessionStorage.getItem('wv_splashShown');
+            if (!isStandalone || alreadyShown) {
+                el.style.display = 'none';
+                return;
+            }
+            sessionStorage.setItem('wv_splashShown', 'true');
+            setTimeout(function () {
+                el.classList.add('wv-splash--hide');
+                setTimeout(function () { el.style.display = 'none'; }, 400);
+            }, 700);
+        })();
+    </script>
+
     <!-- Dynamic Weather Scene Background -->
     <div id="wvScene" class="wv-scene" data-condition="clear" data-night="false" aria-hidden="true">
         <div class="wv-scene__gradient"></div>

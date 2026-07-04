@@ -2744,7 +2744,58 @@ body[data-page="map"] .wv-content {
 }
 
 /* ========================================
- * 34. INSTALL PWA PROMPT
+ * 34. SPLASH SCREEN (standalone PWA cold launch only)
+ * ======================================== */
+
+.wv-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wv-space-4);
+  background: var(--wv-scene-clear-day);
+  transition: opacity 400ms ease-out;
+}
+
+.wv-splash--hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.wv-splash__mark {
+  width: 96px;
+  height: 96px;
+  border-radius: 22%;
+  box-shadow: var(--wv-shadow-xl);
+  animation: wv-splash-in 500ms var(--wv-easing-spring);
+}
+
+.wv-splash__title {
+  margin: 0;
+  color: #ffffff;
+  font-size: var(--wv-text-xl);
+  font-weight: var(--wv-font-weight-bold);
+  letter-spacing: 0.02em;
+  animation: wv-splash-in 500ms var(--wv-easing-spring) 80ms backwards;
+}
+
+@keyframes wv-splash-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wv-splash__mark,
+  .wv-splash__title {
+    animation: none;
+  }
+}
+
+/* ========================================
+ * 35. INSTALL PWA PROMPT
  * ======================================== */
 
 .wv-install-prompt {

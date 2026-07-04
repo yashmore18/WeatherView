@@ -1,5 +1,5 @@
 // Service Worker for WeatherView PWA
-const CACHE_NAME = 'yash-weather-app-v3';
+const CACHE_NAME = 'yash-weather-app-v4';
 const STATIC_CACHE_URLS = [
   '/',
   '/forecast',
@@ -15,6 +15,13 @@ const STATIC_CACHE_URLS = [
   '/static/js/pages/locations.js',
   '/static/js/pages/settings.js',
   '/static/manifest.json',
+  '/static/icons/icon-192.png',
+  '/static/icons/icon-512.png',
+  '/static/icons/icon-maskable-192.png',
+  '/static/icons/icon-maskable-512.png',
+  '/static/icons/apple-touch-icon-180.png',
+  '/static/icons/favicon-32.png',
+  '/static/icons/favicon-16.png',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
   'https://cdn.jsdelivr.net/npm/chart.js'
   // Leaflet + OpenStreetMap/OpenWeatherMap tiles are deliberately not
@@ -238,15 +245,14 @@ self.addEventListener('push', event => {
     const data = event.data.json();
     const options = {
       body: data.body || 'Weather update available',
-      icon: '/static/icon-192x192.png',
-      badge: '/static/badge-72x72.png',
+      icon: '/static/icons/icon-192.png',
+      badge: '/static/icons/icon-192.png',
       tag: 'weather-notification',
       requireInteraction: false,
       actions: [
         {
           action: 'view',
-          title: 'View Weather',
-          icon: '/static/action-view.png'
+          title: 'View Weather'
         }
       ]
     };
