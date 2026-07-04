@@ -21,10 +21,15 @@ app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-prod
 
 # Initialize services
 weather_api = WeatherAPI()
-cache = Cache(ttl=600)  # 10 minutes TTL
-search_cache = Cache(ttl=300)  # 5 minutes TTL for location search results
-aqi_cache = Cache(ttl=1800)  # 30 minutes TTL for air quality data
-tile_cache = Cache(ttl=600)  # 10 minutes TTL for map tile images (OWM tiles refresh roughly hourly)
+# Explicit namespaces (rather than Cache's auto-generated random one) so that
+# every gunicorn worker process - each running its own copy of this module -
+# resolves to the same underlying SQLite-backed cache bucket instead of four
+# different per-process buckets, which would silently defeat cross-worker
+# cache sharing under concurrent load.
+cache = Cache(ttl=600, namespace='weather')  # 10 minutes TTL
+search_cache = Cache(ttl=300, namespace='search')  # 5 minutes TTL for location search results
+aqi_cache = Cache(ttl=1800, namespace='aqi')  # 30 minutes TTL for air quality data
+tile_cache = Cache(ttl=600, namespace='tile')  # 10 minutes TTL for map tile images (OWM tiles refresh roughly hourly)
 
 @app.route('/')
 def index():

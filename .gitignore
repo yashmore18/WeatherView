@@ -7,3 +7,6 @@ __pycache__/
 .pytest_cache/
 .aider*
 .claude/
+
+# Runtime SQLite cache (services/cache.py) - regenerated on startup, not source
+instance/
