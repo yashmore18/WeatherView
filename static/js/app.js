@@ -42,6 +42,7 @@ class WeatherApp {
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
+                this.hideSearchDropdown();
                 this.searchWeather(e.target.value);
             }
         });
@@ -98,6 +99,14 @@ class WeatherApp {
             });
         }
 
+        // Share weather
+        const shareBtn = document.getElementById('shareBtn');
+        if (shareBtn) {
+            shareBtn.addEventListener('click', () => {
+                this.shareWeather();
+            });
+        }
+
         // Hourly scroll navigation
         const hourlyPrev = document.getElementById('hourlyPrev');
         const hourlyNext = document.getElementById('hourlyNext');
@@ -127,6 +136,30 @@ class WeatherApp {
             if (!e.target.closest('.wv-search')) {
                 this.hideSearchDropdown();
             }
+        });
+
+        // Sidebar navigation - scrolls to the relevant section instead of
+        // navigating away, since this is a single-page app with no other routes.
+        document.querySelectorAll('.wv-nav-item').forEach(navItem => {
+            navItem.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = navItem.dataset.target;
+                const target = targetId ? document.getElementById(targetId) : null;
+
+                document.querySelectorAll('.wv-nav-item').forEach(item => {
+                    item.classList.remove('wv-nav-item--active');
+                    item.removeAttribute('aria-current');
+                });
+                navItem.classList.add('wv-nav-item--active');
+                navItem.setAttribute('aria-current', 'page');
+
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                if (targetId === 'wvHeader') {
+                    document.getElementById('citySearch')?.focus();
+                }
+            });
         });
 
         // Keyboard navigation for dropdown
@@ -255,6 +288,7 @@ class WeatherApp {
                 this.displayAirQuality(airQualityData, currentData.visibility, currentData.lat, currentData.lon);
             } catch (error) {
                 console.warn('Air quality data unavailable:', error);
+                this.displayAirQualityUnavailable();
             }
 
         } catch (error) {
@@ -290,7 +324,10 @@ class WeatherApp {
                     this.displayAirQuality(airQualityData, currentData.visibility, currentData.lat, currentData.lon);
                 } catch (error) {
                     console.warn('Air quality data unavailable:', error);
+                    this.displayAirQualityUnavailable();
                 }
+            } else {
+                this.displayAirQualityUnavailable();
             }
 
             // Save last searched city
@@ -336,6 +373,7 @@ class WeatherApp {
                 this.displayAirQuality(airQualityData, currentData.visibility, latitude, longitude);
             } catch (error) {
                 console.warn('Air quality data unavailable:', error);
+                this.displayAirQualityUnavailable();
             }
 
             // Update search input with city name
@@ -553,11 +591,11 @@ class WeatherApp {
                 id: 'uv',
                 icon: 'fa-sun',
                 title: 'UV Index',
-                value: data.uvi ? data.uvi.toFixed(1) : '--',
-                subtitle: this.getUVDescription(data.uvi),
-                extra: [
+                value: data.uvi ? data.uvi.toFixed(1) : 'N/A',
+                subtitle: data.uvi ? this.getUVDescription(data.uvi) : 'Not available',
+                extra: data.uvi ? [
                     { label: 'Risk Level', value: this.getUVDescription(data.uvi) }
-                ]
+                ] : []
             },
             {
                 id: 'wind',
@@ -660,6 +698,16 @@ class WeatherApp {
                 aqiBarFill.style.width = `${width}%`;
                 aqiBarFill.style.background = aqiColors[aqi] || 'var(--wv-color-accent)';
             }
+        }
+    }
+
+    displayAirQualityUnavailable() {
+        const aqiValueEl = document.getElementById('detail-aqi-value');
+        const aqiSubtitleEl = document.getElementById('detail-aqi-subtitle');
+        if (aqiValueEl && aqiSubtitleEl) {
+            aqiValueEl.textContent = 'N/A';
+            aqiSubtitleEl.textContent = 'Not available';
+            aqiValueEl.style.color = 'var(--wv-color-text-primary)';
         }
     }
 
@@ -844,8 +892,8 @@ class WeatherApp {
             // Remove from favorites
             this.favorites.splice(index, 1);
         } else {
-            // Add to favorites (max 10)
-            if (this.favorites.length >= 10) {
+            // Add to favorites (max 5)
+            if (this.favorites.length >= 5) {
                 this.favorites.shift(); // Remove oldest
             }
             this.favorites.push(cityName);
@@ -873,6 +921,37 @@ class WeatherApp {
         // Simple alert for now - could be enhanced with a modal
         const cities = this.favorites.join('\n') || 'None';
         alert(`Favorite Cities:\n${cities}\n\nClick the × on any chip to remove.`);
+    }
+
+    async shareWeather() {
+        if (!this.currentData) return;
+
+        const tempUnit = this.currentUnits === 'imperial' ? '°F' : '°C';
+        const text = `${this.currentData.city}: ${Math.round(this.currentData.temp)}${tempUnit}, ${this.currentData.description}`;
+        const shareData = { title: 'WeatherView', text, url: window.location.href };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.warn('Share failed:', error);
+                }
+            }
+            return;
+        }
+
+        if (navigator.clipboard) {
+            try {
+                await navigator.clipboard.writeText(`${text} - ${window.location.href}`);
+                this.showSuccess('Weather info copied to clipboard');
+            } catch (error) {
+                this.showError('Unable to share weather info');
+            }
+            return;
+        }
+
+        this.showError('Sharing is not supported on this browser');
     }
 
     toggleUnits(isImperial) {

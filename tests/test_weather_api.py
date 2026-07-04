@@ -29,26 +29,29 @@ class TestWeatherAPI:
         # Mock response data
         mock_response_data = {
             'name': 'London',
-            'sys': {'country': 'GB'},
+            'sys': {'country': 'GB', 'sunrise': 1642665600, 'sunset': 1642699200},
             'dt': 1642680000,
             'timezone': 0,
             'main': {
                 'temp': 15.5,
                 'feels_like': 14.2,
-                'humidity': 65
+                'humidity': 65,
+                'sea_level': 1015
             },
-            'wind': {'speed': 3.5},
+            'wind': {'speed': 3.5, 'gust': 6.2},
             'weather': [{
                 'description': 'clear sky',
                 'icon': '01d'
-            }]
+            }],
+            'coord': {'lat': 51.5074, 'lon': -0.1278},
+            'clouds': {'all': 40}
         }
-        
+
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = mock_response_data
         mock_get.return_value = mock_response
-        
+
         # Test the request
         result = self.weather_api.get_current_weather(q='London', units='metric')
         
@@ -71,6 +74,13 @@ class TestWeatherAPI:
         assert result['wind_unit'] == 'm/s'
         assert result['description'] == 'Clear Sky'
         assert result['icon'] == '01d'
+        assert result['lat'] == 51.5074
+        assert result['lon'] == -0.1278
+        assert result['clouds'] == 40
+        assert result['sunrise'] == 1642665600
+        assert result['sunset'] == 1642699200
+        assert result['wind_gust'] == 6.2
+        assert result['sea_level'] == 1015
     
     @patch('services.weather_api.requests.get')
     def test_current_weather_with_coordinates(self, mock_get):
@@ -89,7 +99,8 @@ class TestWeatherAPI:
             'weather': [{
                 'description': 'partly cloudy',
                 'icon': '02d'
-            }]
+            }],
+            'coord': {'lat': 40.7128, 'lon': -74.0060}
         }
         
         mock_response = Mock()
@@ -101,8 +112,8 @@ class TestWeatherAPI:
         
         # Verify request parameters
         args, kwargs = mock_get.call_args
-        assert kwargs['params']['lat'] == 40.7128
-        assert kwargs['params']['lon'] == -74.0060
+        assert kwargs['params']['lat'] == str(40.7128)
+        assert kwargs['params']['lon'] == str(-74.0060)
         assert kwargs['params']['units'] == 'imperial'
         
         # Verify imperial units in response
@@ -116,17 +127,20 @@ class TestWeatherAPI:
             'city': {
                 'name': 'Paris',
                 'country': 'FR',
-                'timezone': 3600
+                'timezone': 3600,
+                'coord': {'lat': 48.8566, 'lon': 2.3522}
             },
             'list': [
                 {
                     'dt': 1642680000,
-                    'main': {'temp': 12.5},
+                    'main': {'temp': 12.5, 'temp_min': 11.0, 'temp_max': 13.0, 'humidity': 70},
+                    'wind': {'speed': 4.0},
                     'weather': [{'description': 'light rain', 'icon': '10d'}]
                 },
                 {
                     'dt': 1642690800,
-                    'main': {'temp': 14.2},
+                    'main': {'temp': 14.2, 'temp_min': 12.5, 'temp_max': 15.0, 'humidity': 68},
+                    'wind': {'speed': 3.2},
                     'weather': [{'description': 'cloudy', 'icon': '04d'}]
                 }
             ]
@@ -148,14 +162,15 @@ class TestWeatherAPI:
         assert result['city'] == 'Paris'
         assert result['country'] == 'FR'
         assert result['timezone_offset'] == 3600
-        assert len(result['points']) == 2
-        
+        assert len(result['hourly_forecast']) == 2
+
         # Verify first forecast point
-        point = result['points'][0]
+        point = result['hourly_forecast'][0]
         assert point['temp'] == 12.5
         assert point['temp_unit'] == '°C'
         assert point['description'] == 'Light Rain'
         assert point['icon'] == '10d'
+        assert point['dt'] == 1642680000
         assert 'ts_iso' in point
     
     @patch('services.weather_api.requests.get')

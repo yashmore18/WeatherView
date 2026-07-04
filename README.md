@@ -1,6 +1,29 @@
-# Weather App
+# WeatherView
 
-A production-ready Flask web application that provides current weather conditions and 5-day forecasts for any city worldwide. Features include geolocation support, interactive charts, and a responsive design with dark/light mode.
+A Flask web application that provides current weather conditions and 5-day forecasts for any city worldwide. Features include geolocation support, interactive charts, air quality, and a responsive design with dark/light mode.
+
+## Setup
+
+Requires Python 3.11+ and an [OpenWeatherMap API key](https://openweathermap.org/api).
+
+```bash
+uv sync                          # or: pip install -r requirements.txt
+cp .env.example .env             # then fill in WEATHER_API_KEY
+```
+
+## Running
+
+```bash
+.venv/bin/python main.py                                           # dev server on :5000
+# or
+.venv/bin/gunicorn --bind 0.0.0.0:5000 --reload main:app           # production-style server
+```
+
+## Testing
+
+```bash
+.venv/bin/python -m pytest
+```
 
 ## Features
 
@@ -21,9 +44,8 @@ A production-ready Flask web application that provides current weather condition
 - **Accessibility**: WCAG compliant with proper ARIA labels and keyboard navigation
 
 ### Technical Features
-- **PWA Support**: Offline capabilities and app-like experience
-- **Caching Strategy**: Intelligent API response caching with TTL
-- **Rate Limiting**: Built-in protection against excessive API calls
+- **PWA Support**: Offline capabilities and app-like experience via a service worker
+- **Caching Strategy**: Per-endpoint TTL caching (10 min weather/forecast, 5 min location search, 30 min air quality) to reduce upstream API calls
 - **Logging**: Comprehensive request and error logging
 - **Testing**: Full test suite with pytest
 
@@ -35,10 +57,10 @@ A production-ready Flask web application that provides current weather condition
 - **OpenWeatherMap API**: Weather data provider
 
 ### Frontend
-- **Vanilla JavaScript**: No heavy frameworks, pure JS with Fetch API
-- **Bootstrap**: Responsive CSS framework (Replit themed)
+- **Vanilla JavaScript**: No frameworks, a single `WeatherApp` class using the Fetch API
+- **Custom CSS design system**: Hand-built glassmorphism UI (no CSS framework)
 - **Chart.js**: Interactive temperature charts
 - **Font Awesome**: Icon library
 
 ### Infrastructure
-- **In-memory Caching**: TTL-based caching system (Redis-ready architecture)
+- **In-memory Caching**: TTL-based caching system, no external cache/database

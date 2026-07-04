@@ -48,19 +48,19 @@
             <span>WeatherView</span>
         </div>
         <nav class="wv-sidebar__nav">
-            <a href="#" class="wv-nav-item wv-nav-item--active" aria-current="page">
+            <a href="#heroCard" class="wv-nav-item wv-nav-item--active" data-target="heroCard" aria-current="page">
                 <i class="fas fa-home"></i>
                 <span>Today</span>
             </a>
-            <a href="#" class="wv-nav-item">
+            <a href="#dailySection" class="wv-nav-item" data-target="dailySection">
                 <i class="fas fa-calendar-week"></i>
                 <span>Forecast</span>
             </a>
-            <a href="#" class="wv-nav-item">
+            <a href="#favoritesSection" class="wv-nav-item" data-target="favoritesSection">
                 <i class="fas fa-map-marker-alt"></i>
                 <span>Locations</span>
             </a>
-            <a href="#" class="wv-nav-item">
+            <a href="#wvHeader" class="wv-nav-item" data-target="wvHeader">
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
             </a>
@@ -70,7 +70,7 @@
     <!-- Main Content Area -->
     <div class="wv-main">
         <!-- Top Bar -->
-        <header class="wv-header" role="banner">
+        <header id="wvHeader" class="wv-header" role="banner">
             <div class="wv-header__left">
                 <h1 class="wv-header__title">Weather</h1>
             </div>
@@ -129,12 +129,6 @@
 
         <!-- Main Content -->
         <main class="wv-content" role="main">
-            <!-- Error Container -->
-            <div id="errorContainer" role="alert" aria-live="polite"></div>
-
-            <!-- Favorites -->
-            <div id="favorites" style="display: none;"></div>
-
             {% block content %}{% endblock %}
         </main>
     </div>

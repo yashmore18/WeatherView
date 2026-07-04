@@ -185,7 +185,12 @@ class WeatherAPI:
             'description': data['weather'][0]['description'].title(),
             'icon': data['weather'][0]['icon'],
             'lat': data['coord']['lat'],
-            'lon': data['coord']['lon']
+            'lon': data['coord']['lon'],
+            'clouds': data.get('clouds', {}).get('all', 0),
+            'sunrise': data['sys'].get('sunrise'),
+            'sunset': data['sys'].get('sunset'),
+            'wind_gust': round(data['wind']['gust'], 1) if data['wind'].get('gust') is not None else None,
+            'sea_level': data['main'].get('sea_level')
         }
     
     def get_forecast(self, q: Optional[str] = None, lat: Optional[float] = None, 
@@ -215,20 +220,23 @@ class WeatherAPI:
             date_key = ts_iso.split('T')[0]  # Get just the date part
             
             point_data = {
+                'dt': item['dt'],
                 'ts_iso': ts_iso,
                 'temp': round(item['main']['temp'], 1),
                 'temp_min': round(item['main']['temp_min'], 1),
                 'temp_max': round(item['main']['temp_max'], 1),
                 'temp_unit': temp_unit,
+                'feels_like': round(item['main'].get('feels_like', item['main']['temp']), 1),
                 'icon': item['weather'][0]['icon'],
                 'description': item['weather'][0]['description'].title(),
                 'humidity': item['main']['humidity'],
                 'pressure': item['main'].get('pressure', 0),
                 'wind_speed': round(item['wind']['speed'], 1),
-                'visibility': item.get('visibility', 10000) // 1000  # Convert to km
+                'visibility': item.get('visibility', 10000) // 1000,  # Convert to km
+                'pop': item.get('pop', 0)
             }
             points.append(point_data)
-            
+
             # Aggregate daily data for high/low temps
             if date_key not in daily_data:
                 daily_data[date_key] = {
@@ -237,11 +245,13 @@ class WeatherAPI:
                     'temp_max': point_data['temp_max'],
                     'icon': point_data['icon'],
                     'description': point_data['description'],
-                    'temp_unit': temp_unit
+                    'temp_unit': temp_unit,
+                    'pop': point_data['pop']
                 }
             else:
                 daily_data[date_key]['temp_min'] = min(daily_data[date_key]['temp_min'], point_data['temp_min'])
                 daily_data[date_key]['temp_max'] = max(daily_data[date_key]['temp_max'], point_data['temp_max'])
+                daily_data[date_key]['pop'] = max(daily_data[date_key]['pop'], point_data['pop'])
         
         # Convert daily data to list and limit to 7 days
         daily_forecast = list(daily_data.values())[:7]
@@ -252,6 +262,6 @@ class WeatherAPI:
             'timezone_offset': timezone_offset,
             'lat': data['city']['coord']['lat'],
             'lon': data['city']['coord']['lon'],
-            'points': points,
+            'hourly_forecast': points,
             'daily_forecast': daily_forecast
         }

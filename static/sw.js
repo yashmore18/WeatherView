@@ -266,11 +266,13 @@ self.addEventListener('message', event => {
     self.skipWaiting();
   }
   
-  // Send response back to main thread
-  event.ports[0].postMessage({
-    type: 'SW_RESPONSE',
-    payload: 'Service Worker received message'
-  });
+  // Send response back to main thread, if it provided a reply channel
+  if (event.ports && event.ports[0]) {
+    event.ports[0].postMessage({
+      type: 'SW_RESPONSE',
+      payload: 'Service Worker received message'
+    });
+  }
 });
 
 console.log('[SW] Service Worker script loaded');
