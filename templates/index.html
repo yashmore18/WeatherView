@@ -4,6 +4,11 @@
 
 {% block content %}
 <div class="wv-page">
+    <!-- Pull-to-refresh indicator (touch devices only, wired by pages/today.js) -->
+    <div id="pullToRefresh" class="wv-pull-refresh" aria-hidden="true">
+        <i class="fas fa-arrow-down wv-pull-refresh__icon" id="pullToRefreshIcon"></i>
+    </div>
+
     <!-- Smart Alerts (rendered by pages/today.js) -->
     <div id="alertsContainer" class="wv-alerts-container" role="region" aria-label="Weather alerts"></div>
 

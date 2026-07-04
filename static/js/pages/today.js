@@ -10,6 +10,7 @@ class TodayPage {
         this.lastUpdatedAt = null;
 
         this.setupEventListeners();
+        this.setupPullToRefresh();
         this.loadInitialCity();
         if (!this.wv.getResolvedCity()) this.loadPopularCities();
 
@@ -43,8 +44,77 @@ class TodayPage {
 
     refresh() {
         if (this.currentCity) {
-            this.handleCitySelected({ city: this.currentCity });
+            return this.handleCitySelected({ city: this.currentCity });
         }
+        return Promise.resolve();
+    }
+
+    // Swipe-down-from-top gesture, mirroring the native pull-to-refresh
+    // pattern in Apple Weather/most mobile apps - only touch devices get the
+    // listener at all, and it only arms when already scrolled to the top so
+    // it can't hijack normal scrolling further down the page.
+    setupPullToRefresh() {
+        const indicator = document.getElementById('pullToRefresh');
+        if (!indicator || !('ontouchstart' in window)) return;
+
+        const threshold = 70;
+        const maxPull = 100;
+        let startY = null;
+        let dist = 0;
+        let pulling = false;
+
+        window.addEventListener('touchstart', (e) => {
+            if (window.scrollY > 0 || this.wv.isLoading || !this.currentCity) {
+                startY = null;
+                return;
+            }
+            startY = e.touches[0].clientY;
+            pulling = false;
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (startY === null) return;
+            const delta = e.touches[0].clientY - startY;
+            if (delta <= 0 || window.scrollY > 0) {
+                startY = null;
+                return;
+            }
+            pulling = true;
+            e.preventDefault();
+            dist = Math.min(delta * 0.5, maxPull);
+            indicator.style.transform = `translateY(${dist - 60}px)`;
+            indicator.classList.toggle('wv-pull-refresh--ready', dist >= threshold);
+        }, { passive: false });
+
+        window.addEventListener('touchend', async () => {
+            if (!pulling) {
+                startY = null;
+                return;
+            }
+            pulling = false;
+            const shouldRefresh = dist >= threshold;
+            indicator.style.transition = 'transform 200ms ease';
+
+            if (shouldRefresh) {
+                indicator.style.transform = 'translateY(20px)';
+                indicator.classList.remove('wv-pull-refresh--ready');
+                indicator.classList.add('wv-pull-refresh--loading');
+                this.wv.announceToScreenReader('Refreshing weather…');
+                try {
+                    await this.refresh();
+                } finally {
+                    indicator.classList.remove('wv-pull-refresh--loading');
+                    indicator.style.transform = '';
+                }
+            } else {
+                indicator.classList.remove('wv-pull-refresh--ready');
+                indicator.style.transform = '';
+            }
+
+            setTimeout(() => { indicator.style.transition = ''; }, 220);
+            startY = null;
+            dist = 0;
+        });
     }
 
     async handleCitySelected(detail) {
@@ -303,7 +373,51 @@ class TodayPage {
             });
         });
 
+        this.setupSwipeToDismiss(container);
         this.setBadgeCount(visible.length);
+    }
+
+    // Swipe an alert banner left/right past a threshold to dismiss it,
+    // same rule as the close button - just a touch-native shortcut for it.
+    setupSwipeToDismiss(container) {
+        if (!('ontouchstart' in window)) return;
+
+        container.querySelectorAll('.wv-alert-banner').forEach(banner => {
+            let startX = null;
+            let dx = 0;
+
+            banner.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                dx = 0;
+                banner.style.transition = 'none';
+            }, { passive: true });
+
+            banner.addEventListener('touchmove', (e) => {
+                if (startX === null) return;
+                dx = e.touches[0].clientX - startX;
+                banner.style.transform = `translateX(${dx}px)`;
+                banner.style.opacity = String(Math.max(0.15, 1 - Math.abs(dx) / 200));
+            }, { passive: true });
+
+            banner.addEventListener('touchend', () => {
+                if (startX === null) return;
+                banner.style.transition = 'transform 200ms ease, opacity 200ms ease';
+                if (Math.abs(dx) > 80) {
+                    banner.style.transform = `translateX(${dx > 0 ? 500 : -500}px)`;
+                    banner.style.opacity = '0';
+                    const id = banner.dataset.alertId;
+                    setTimeout(() => {
+                        this.dismissAlert(id);
+                        banner.remove();
+                        this.updateBadge();
+                    }, 200);
+                } else {
+                    banner.style.transform = '';
+                    banner.style.opacity = '';
+                }
+                startX = null;
+            });
+        });
     }
 
     updateBadge() {

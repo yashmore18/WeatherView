@@ -1399,6 +1399,13 @@ body {
   .wv-footer {
     display: none;
   }
+
+  /* Header wraps to a second row on phones (search box drops below the
+     icon row), so the indicator needs to clear more height here than on
+     wider touch screens like tablets. */
+  .wv-pull-refresh {
+    top: calc(env(safe-area-inset-top, 0px) + 178px);
+  }
 }
 
 @media (max-width: 576px) {
@@ -1452,11 +1459,26 @@ body {
   flex-wrap: wrap;
 }
 
+/* Section titles sit directly on the animated sky (no glass-card wrapper),
+   and the sky's brightness tracks the searched city's real local time, not
+   the UI theme - a dark-mode day search can leave near-white text over a
+   near-white sky. Give titles the same text-scrim pill used by glass-card
+   so they stay readable regardless of that mismatch. */
 .wv-section__title {
   font-size: var(--wv-text-xl);
   font-weight: var(--wv-font-weight-semibold);
   color: var(--wv-color-text-primary);
   margin: 0;
+  display: inline-block;
+  padding: var(--wv-space-1) var(--wv-space-3);
+  border-radius: var(--wv-radius-full);
+  background: var(--wv-glass-text-scrim-light);
+  backdrop-filter: blur(var(--wv-glass-blur));
+  -webkit-backdrop-filter: blur(var(--wv-glass-blur));
+}
+
+[data-bs-theme="dark"] .wv-section__title {
+  background: var(--wv-glass-text-scrim-dark);
 }
 
 .wv-section__actions {
@@ -3245,5 +3267,98 @@ body[data-page="map"] .wv-content {
 .wv-quicklink-card__chevron {
   flex-shrink: 0;
   color: var(--wv-color-text-tertiary);
+}
+
+/* ========================================
+ * 28. TOUCH INTERACTIONS
+ * ======================================== */
+
+/* Press feedback - :hover alone doesn't fire reliably on touch, so tappable
+   cards need their own :active state to feel responsive to a finger rather
+   than just a cursor. */
+.wv-detail-card,
+.wv-hourly-item,
+.wv-quicklink-card,
+.wv-comparison-card,
+.wv-highlight,
+.wv-daily-item {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.wv-detail-card:active,
+.wv-quicklink-card:active,
+.wv-comparison-card:active {
+  transform: scale(0.97);
+  box-shadow: var(--wv-shadow-sm);
+  transition: transform 100ms var(--wv-easing), box-shadow 100ms var(--wv-easing);
+}
+
+.wv-hourly-item:active {
+  transform: scale(0.95) translateY(0);
+  transition: transform 100ms var(--wv-easing);
+}
+
+.wv-highlight:active {
+  transform: scale(0.97);
+  transition: transform 100ms var(--wv-easing);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wv-detail-card:active,
+  .wv-quicklink-card:active,
+  .wv-comparison-card:active,
+  .wv-hourly-item:active,
+  .wv-highlight:active {
+    transform: none;
+  }
+}
+
+/* Pull-to-refresh indicator (Today page only, wired up in pages/today.js) */
+.wv-pull-refresh {
+  position: fixed;
+  top: 120px;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  margin-left: -20px;
+  border-radius: var(--wv-radius-full);
+  background: var(--wv-color-surface);
+  border: 1px solid var(--wv-color-border);
+  box-shadow: var(--wv-shadow-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wv-color-accent);
+  z-index: var(--wv-z-sticky);
+  transform: translateY(-60px);
+  pointer-events: none;
+}
+
+.wv-pull-refresh__icon {
+  transition: transform 150ms var(--wv-easing);
+}
+
+.wv-pull-refresh--ready .wv-pull-refresh__icon {
+  transform: rotate(180deg);
+}
+
+.wv-pull-refresh--loading .wv-pull-refresh__icon {
+  animation: wv-pull-spin 0.7s linear infinite;
+}
+
+@keyframes wv-pull-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wv-pull-refresh--loading .wv-pull-refresh__icon {
+    animation: none;
+  }
+}
+
+/* Swipeable alert banners need room to travel without the page itself
+   scrolling horizontally underneath the gesture. */
+.wv-alert-banner {
+  touch-action: pan-y;
 }
 
