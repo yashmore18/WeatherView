@@ -1,58 +1,66 @@
 # Deployment
 
-## Recommended free host: Koyeb
+## Recommended: keep Render, add a keep-alive ping
 
-Koyeb's free tier runs one web service as an **always-on container** (no
-sleep-after-inactivity like Render's free tier), which is what actually
-fixes the inconsistent-UX complaint - the app doesn't need to cold-start on
-the first request after a period of no traffic.
+Two card-free alternatives (Koyeb, then a from-scratch VM) turned out not to
+be practically available. The actual complaint - inconsistent UX - comes
+from Render's free tier putting the service to sleep after ~15 minutes of
+no traffic, so the *first* request after that has to cold-start the
+dyno. The fix that needs no new signup, no card, and no host migration at
+all: stop the dyno from ever going to sleep, by having something ping it
+regularly.
 
-The app doesn't need its own nginx layer on Koyeb: Koyeb's edge already
-terminates TLS, and gzip/static-file serving at this traffic scale is fine
-straight from Flask/gunicorn. (If you later move to a plain VM instead of
-Koyeb, use `deploy/nginx.conf` in front of gunicorn there - see below.)
+`/healthz` (see `app.py`) exists specifically for this - it returns
+`{"status": "ok"}` immediately, without touching the cache, the database
+file, or OpenWeatherMap, so it's cheap to hit often and is exempt from rate
+limiting.
 
 ### One-time setup
 
-1. Push this repo to GitHub (Koyeb deploys from a Git repo or a Dockerfile).
-2. Create a free Koyeb account, then **Create Service → Docker** (or connect
-   the GitHub repo directly - Koyeb detects the `Dockerfile` automatically).
-3. Set these environment variables in the Koyeb service settings:
-   - `WEATHER_API_KEY` - your OpenWeatherMap key (required)
-   - `SESSION_SECRET` - any random string (`python -c "import secrets; print(secrets.token_hex(32))"`)
-   - `BEHIND_PROXY=true` - so Flask reads the real client IP from
-     `X-Forwarded-For` (Koyeb's edge sets it); without this, flask-limiter's
-     per-IP rate limit would see every visitor as the same address
-   - `LIMITER_STORAGE_URI` - leave unset (defaults to in-memory per worker;
-     fine at this scale) unless you've added a shared Redis instance
-4. Health check path: `/healthz` (added specifically for this - returns
-   `{"status": "ok"}` without touching the cache or OpenWeatherMap, so it
-   stays fast and isn't affected by rate limiting).
-5. Port: Koyeb injects `PORT` automatically; `gunicorn.conf.py` already reads
-   it, and the `Dockerfile`'s `CMD` doesn't hardcode a port.
+1. Pick a free external scheduler - neither requires a card:
+   - **cron-job.org** - free account, no card, up to 1-minute intervals
+   - **UptimeRobot** - free plan, no card, 5-minute minimum interval, and
+     also gives you uptime/downtime alerting as a side benefit
+2. Create a monitor/job hitting `https://<your-render-app>.onrender.com/healthz`
+   every 10 minutes (comfortably under Render's ~15-minute sleep timeout,
+   with margin).
+3. In the Render service's environment variables, set `BEHIND_PROXY=true`.
+   Render's own edge proxies every request to the app, so without this,
+   flask-limiter's per-IP rate limit would see every visitor - and the
+   keep-alive pinger - as the same address instead of their real IPs.
 
-### What's NOT persisted across redeploys/restarts
+### Why this is safe
 
-`services/cache.py`'s SQLite file (`instance/cache.sqlite3`) lives on the
-container's local disk, which Koyeb's free tier doesn't guarantee persists
-across restarts. This is fine - it's a TTL cache, not durable storage. Losing
-it on redeploy is equivalent to a cold in-memory cache; the next request for
-each city just refetches from OpenWeatherMap once.
+- `/healthz` does no work (no cache read, no upstream call), so pinging it
+  every 10 minutes adds negligible load and can't itself trigger rate
+  limiting or burn OpenWeatherMap quota.
+- It doesn't change the app's actual behavior or security posture - it just
+  keeps the existing free dyno warm.
 
-### Verifying after deploy
+### Verifying
 
-- `curl https://<your-koyeb-url>/healthz` → `{"status": "ok"}`
-- Open the app, search a city, toggle dark mode, try "Use My Location"
-  (needs HTTPS to work in a real browser - Koyeb's edge provides this)
-- Check response headers include `Content-Security-Policy`,
-  `Strict-Transport-Security`, etc. (`curl -I`)
+- `curl https://<your-render-app>.onrender.com/healthz` → `{"status": "ok"}`
+- After the ping job has been running for a while, load the app and confirm
+  the first request feels instant rather than showing a multi-second delay
+  (the old cold-start symptom).
+- Response headers should include `Content-Security-Policy`,
+  `Strict-Transport-Security`, etc. (`curl -I`) - unaffected by any of this.
 
-## Alternative: a plain VM (nginx + gunicorn)
+## Reference: Docker / a plain VM, if you revisit hosting later
 
-If you end up with any persistent Linux VM (a different cloud free tier, a
-spare machine, etc.) instead of Koyeb, use the two-process setup this repo
-already ships:
+The repo also ships a `Dockerfile` and `deploy/nginx.conf` in case a
+card-free always-on host becomes available later, or you get access to any
+persistent Linux VM (a different cloud free tier, a spare machine, etc.).
 
+**Docker (single container, platform terminates TLS at its edge):**
+```
+docker build -t weatherview .
+docker run -e WEATHER_API_KEY=... -e SESSION_SECRET=... -e BEHIND_PROXY=true -p 8000:8000 weatherview
+```
+Health check path: `/healthz`. `gunicorn.conf.py` reads `$PORT` automatically
+if the platform sets one.
+
+**Plain VM (nginx + gunicorn as two services):**
 1. `git clone` the repo, `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`
 2. Set `WEATHER_API_KEY`/`SESSION_SECRET` in a `.env` file or systemd
    environment file
@@ -64,8 +72,15 @@ already ships:
    `server_name` and the `alias /opt/weatherview/static/` path to match
    where the repo actually lives, symlink into `sites-enabled`, then
    `certbot --nginx` to provision a free TLS cert
-5. Set `BEHIND_PROXY=true` in the gunicorn service's environment (same
-   reasoning as the Koyeb case - nginx is the proxy now instead of Koyeb's edge)
+5. Set `BEHIND_PROXY=true` in the gunicorn service's environment so
+   flask-limiter sees real client IPs via nginx's `X-Forwarded-For`
+
+## What's NOT persisted across restarts (any host)
+
+`services/cache.py`'s SQLite file (`instance/cache.sqlite3`) lives on local
+disk. Losing it on a restart/redeploy is fine - it's a TTL cache, not
+durable storage. The next request for each city just refetches from
+OpenWeatherMap once.
 
 ## Local development
 
