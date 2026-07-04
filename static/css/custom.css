@@ -476,6 +476,11 @@ html {
   line-height: var(--wv-line-height-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* The off-canvas sidebar is `position: fixed` + `transform: translateX(-100%)`
+     below 1024px - Chromium/WebKit include a transformed fixed element's
+     untransformed box in document scrollWidth, which otherwise adds a
+     phantom 260-280px of horizontal scroll on every page at every width. */
+  overflow-x: hidden;
 }
 
 /* Focus visible for accessibility */
@@ -743,6 +748,7 @@ body {
   color: var(--wv-color-text-primary);
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 /* Sidebar */

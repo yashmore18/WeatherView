@@ -31,7 +31,7 @@ class SettingsPage {
 
     setupAlertPrefs() {
         const prefs = this.getAlertPrefs();
-        const map = { rain: 'alertPrefRain', aqi: 'alertPrefAqi', frost: 'alertPrefFrost' };
+        const map = { rain: 'alertPrefRain', aqi: 'alertPrefAqi', frost: 'alertPrefFrost', goodWeather: 'alertPrefGoodWeather' };
         Object.entries(map).forEach(([key, id]) => {
             const el = document.getElementById(id);
             if (!el) return;

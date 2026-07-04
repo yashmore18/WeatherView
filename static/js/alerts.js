@@ -33,6 +33,59 @@ function checkRainSoon(currentWeather, forecast) {
     };
 }
 
+function checkRainEnding(currentWeather, forecast) {
+    const hourly = forecast?.hourly_forecast || [];
+    if (hourly.length === 0) return null;
+
+    // Mirrors checkRainSoon's use of the current-conditions icon (rather than
+    // matching a forecast bucket to "now") to decide if it's raining right now.
+    if (!/^(09|10|11)/.test(currentWeather?.icon || '')) return null;
+
+    const nowTs = Date.now() / 1000;
+    const upcoming = hourly.filter(h => h.dt >= nowTs);
+    const clearsAt = upcoming.find(h => (h.pop || 0) < 0.5);
+    if (!clearsAt) return null;
+
+    const minutes = Math.max(0, Math.round((clearsAt.dt - nowTs) / 60));
+    const message = minutes <= 30
+        ? 'Rain should clear up within the hour.'
+        : minutes <= 90
+            ? `Rain should let up in about ${Math.round(minutes / 60 * 2) / 2} hours.`
+            : `Rain is expected to continue for a few more hours, clearing around ${new Date(clearsAt.dt * 1000).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })}.`;
+
+    return {
+        id: 'rain-ending',
+        severity: 'info',
+        icon: 'fa-cloud-sun-rain',
+        title: 'Rain letting up',
+        message
+    };
+}
+
+function checkGoodWeather(currentWeather, forecast, airQuality, units) {
+    if (!currentWeather) return null;
+
+    const isClear = /^(01|02)/.test(currentWeather.icon || '');
+    if (!isClear) return null;
+
+    // Already covered by more specific/urgent alerts - a "great day" banner
+    // shouldn't show alongside an active rain or AQI warning.
+    if (checkRainSoon(currentWeather, forecast)) return null;
+    if (airQuality && airQuality.aqi >= 3) return null;
+
+    const comfyMin = units === 'imperial' ? 55 : 13;
+    const comfyMax = units === 'imperial' ? 82 : 28;
+    if (currentWeather.temp < comfyMin || currentWeather.temp > comfyMax) return null;
+
+    return {
+        id: 'good-weather',
+        severity: 'info',
+        icon: 'fa-sun',
+        title: 'Great day to be outside',
+        message: `Clear skies and a comfortable ${Math.round(currentWeather.temp)}°${units === 'imperial' ? 'F' : 'C'} right now.`
+    };
+}
+
 function checkAqiSpike(airQuality) {
     if (!airQuality || !airQuality.aqi) return null;
     const aqi = airQuality.aqi;
@@ -90,6 +143,8 @@ function computeAlerts(currentWeather, forecast, airQuality, prefs = {}, units =
     if (prefs.rain !== false) {
         const a = checkRainSoon(currentWeather, forecast);
         if (a) alerts.push(a);
+        const b = checkRainEnding(currentWeather, forecast);
+        if (b) alerts.push(b);
     }
     if (prefs.aqi !== false) {
         const a = checkAqiSpike(airQuality);
@@ -99,7 +154,11 @@ function computeAlerts(currentWeather, forecast, airQuality, prefs = {}, units =
         const a = checkTempSwing(forecast, units);
         if (a) alerts.push(a);
     }
+    if (prefs.goodWeather !== false) {
+        const a = checkGoodWeather(currentWeather, forecast, airQuality, units);
+        if (a) alerts.push(a);
+    }
     return alerts;
 }
 
-window.WVAlerts = { computeAlerts, checkRainSoon, checkAqiSpike, checkTempSwing };
+window.WVAlerts = { computeAlerts, checkRainSoon, checkRainEnding, checkAqiSpike, checkTempSwing, checkGoodWeather };
