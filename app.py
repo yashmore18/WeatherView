@@ -24,6 +24,7 @@ weather_api = WeatherAPI()
 cache = Cache(ttl=600)  # 10 minutes TTL
 search_cache = Cache(ttl=300)  # 5 minutes TTL for location search results
 aqi_cache = Cache(ttl=1800)  # 30 minutes TTL for air quality data
+tile_cache = Cache(ttl=600)  # 10 minutes TTL for map tile images (OWM tiles refresh roughly hourly)
 
 @app.route('/')
 def index():
@@ -210,11 +211,21 @@ def map_tile(layer, z, x, y):
     if layer not in ALLOWED_MAP_LAYERS:
         return jsonify({'error': 'Unknown map layer'}), 400
 
-    try:
-        tile_bytes, content_type = weather_api.get_map_tile(layer, z, x, y)
-    except ValueError as e:
-        logger.warning(f"Map tile error: {str(e)}")
-        return jsonify({'error': str(e)}), 502
+    # Same (layer, z, x, y) tile is requested repeatedly - by the same user
+    # panning back over an area, and independently by every other concurrent
+    # user looking at the same region - so without a server-side cache every
+    # one of those becomes its own synchronous upstream OpenWeatherMap call.
+    cache_key = f"tile:{layer}:{z}:{x}:{y}"
+    cached = tile_cache.get(cache_key)
+    if cached:
+        tile_bytes, content_type = cached
+    else:
+        try:
+            tile_bytes, content_type = weather_api.get_map_tile(layer, z, x, y)
+        except ValueError as e:
+            logger.warning(f"Map tile error: {str(e)}")
+            return jsonify({'error': str(e)}), 502
+        tile_cache.set(cache_key, (tile_bytes, content_type))
 
     response = app.response_class(tile_bytes, mimetype=content_type)
     response.headers['Cache-Control'] = 'public, max-age=600'

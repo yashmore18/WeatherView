@@ -17,6 +17,16 @@ class WeatherAPI:
         self.api_key = os.environ.get('WEATHER_API_KEY')
         if not self.api_key:
             raise ValueError("WEATHER_API_KEY environment variable is required")
+
+        # A plain requests.get() opens a fresh TCP+TLS connection per call.
+        # Under concurrent load (multiple gunicorn workers/threads all
+        # calling OpenWeatherMap) a pooled Session reuses connections instead
+        # of paying that handshake cost on every single request, including
+        # the map tile proxy which can fire dozens of requests per pan/zoom.
+        self._session = requests.Session()
+        adapter = requests.adapters.HTTPAdapter(pool_connections=20, pool_maxsize=20)
+        self._session.mount('https://', adapter)
+        self._session.mount('http://', adapter)
     
     def _make_request(self, endpoint: str, params: Dict[str, Any]) -> Dict[str, Any]:
         """Make a request to the OpenWeatherMap API with error handling."""
@@ -25,7 +35,7 @@ class WeatherAPI:
         
         try:
             logger.info(f"Making API request to {endpoint} with params: {params}")
-            response = requests.get(url, params=params, timeout=10)
+            response = self._session.get(url, params=params, timeout=10)
             
             if response.status_code == 401:
                 raise ValueError("Invalid or missing API key")
@@ -56,7 +66,7 @@ class WeatherAPI:
         try:
             url = f"{self.GEO_URL}/direct"
             logger.info(f"Making geocoding request with params: {params}")
-            response = requests.get(url, params=params, timeout=10)
+            response = self._session.get(url, params=params, timeout=10)
             
             if response.status_code == 401:
                 raise ValueError("Invalid or missing API key")
@@ -98,7 +108,7 @@ class WeatherAPI:
             }
             
             logger.info(f"Making air pollution request with params: {params}")
-            response = requests.get(url, params=params, timeout=10)
+            response = self._session.get(url, params=params, timeout=10)
             
             if response.status_code == 401:
                 raise ValueError("Invalid or missing API key")
@@ -145,7 +155,7 @@ class WeatherAPI:
 
         try:
             logger.info(f"Making map tile request to {layer}/{z}/{x}/{y}")
-            response = requests.get(url, params=params, timeout=10)
+            response = self._session.get(url, params=params, timeout=10)
 
             if response.status_code == 401:
                 raise ValueError("Invalid or missing API key")

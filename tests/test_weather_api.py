@@ -23,7 +23,7 @@ class TestWeatherAPI:
             with pytest.raises(ValueError, match="WEATHER_API_KEY environment variable is required"):
                 WeatherAPI()
     
-    @patch('services.weather_api.requests.get')
+    @patch('services.weather_api.requests.Session.get')
     def test_successful_current_weather_request(self, mock_get):
         """Test successful current weather API request."""
         # Mock response data
@@ -82,7 +82,7 @@ class TestWeatherAPI:
         assert result['wind_gust'] == 6.2
         assert result['sea_level'] == 1015
     
-    @patch('services.weather_api.requests.get')
+    @patch('services.weather_api.requests.Session.get')
     def test_current_weather_with_coordinates(self, mock_get):
         """Test current weather request with coordinates."""
         mock_response_data = {
@@ -120,7 +120,7 @@ class TestWeatherAPI:
         assert result['temp_unit'] == '°F'
         assert result['wind_unit'] == 'mph'
     
-    @patch('services.weather_api.requests.get')
+    @patch('services.weather_api.requests.Session.get')
     def test_forecast_request(self, mock_get):
         """Test 5-day forecast API request."""
         mock_response_data = {
@@ -173,7 +173,7 @@ class TestWeatherAPI:
         assert point['dt'] == 1642680000
         assert 'ts_iso' in point
     
-    @patch('services.weather_api.requests.get')
+    @patch('services.weather_api.requests.Session.get')
     def test_api_error_404(self, mock_get):
         """Test handling of 404 (city not found) error."""
         mock_response = Mock()
@@ -183,7 +183,7 @@ class TestWeatherAPI:
         with pytest.raises(ValueError, match="City not found"):
             self.weather_api.get_current_weather(q='NonexistentCity')
     
-    @patch('services.weather_api.requests.get')
+    @patch('services.weather_api.requests.Session.get')
     def test_api_error_401(self, mock_get):
         """Test handling of 401 (unauthorized) error."""
         mock_response = Mock()
@@ -193,7 +193,7 @@ class TestWeatherAPI:
         with pytest.raises(ValueError, match="Invalid or missing API key"):
             self.weather_api.get_current_weather(q='London')
     
-    @patch('services.weather_api.requests.get')
+    @patch('services.weather_api.requests.Session.get')
     def test_api_error_429(self, mock_get):
         """Test handling of 429 (rate limit) error."""
         mock_response = Mock()
@@ -203,7 +203,7 @@ class TestWeatherAPI:
         with pytest.raises(ValueError, match="Rate limit reached, try again later"):
             self.weather_api.get_current_weather(q='London')
     
-    @patch('services.weather_api.requests.get')
+    @patch('services.weather_api.requests.Session.get')
     def test_network_timeout(self, mock_get):
         """Test handling of network timeout."""
         mock_get.side_effect = requests.exceptions.Timeout()
@@ -211,7 +211,7 @@ class TestWeatherAPI:
         with pytest.raises(ValueError, match="Request timeout - please try again"):
             self.weather_api.get_current_weather(q='London')
     
-    @patch('services.weather_api.requests.get')
+    @patch('services.weather_api.requests.Session.get')
     def test_connection_error(self, mock_get):
         """Test handling of connection error."""
         mock_get.side_effect = requests.exceptions.ConnectionError()
@@ -227,7 +227,7 @@ class TestWeatherAPI:
         with pytest.raises(ValueError, match="Either city name .* or coordinates .* must be provided"):
             self.weather_api.get_forecast(units='metric')
     
-    @patch('services.weather_api.requests.get')
+    @patch('services.weather_api.requests.Session.get')
     def test_get_map_tile_success(self, mock_get):
         """Test successful map tile fetch returns raw bytes and content type."""
         mock_response = Mock()
@@ -244,7 +244,7 @@ class TestWeatherAPI:
         assert tile_bytes == b'\x89PNG fake tile bytes'
         assert content_type == 'image/png'
 
-    @patch('services.weather_api.requests.get')
+    @patch('services.weather_api.requests.Session.get')
     def test_get_map_tile_invalid_key(self, mock_get):
         """Test map tile fetch with an invalid API key."""
         mock_response = Mock()
@@ -254,7 +254,7 @@ class TestWeatherAPI:
         with pytest.raises(ValueError, match="Invalid or missing API key"):
             self.weather_api.get_map_tile('clouds_new', 1, 0, 0)
 
-    @patch('services.weather_api.requests.get')
+    @patch('services.weather_api.requests.Session.get')
     def test_get_map_tile_timeout(self, mock_get):
         """Test map tile fetch handling of network timeout."""
         mock_get.side_effect = requests.exceptions.Timeout()
@@ -262,7 +262,7 @@ class TestWeatherAPI:
         with pytest.raises(ValueError, match="Tile request timeout - please try again"):
             self.weather_api.get_map_tile('temp_new', 1, 0, 0)
 
-    @patch('services.weather_api.requests.get')
+    @patch('services.weather_api.requests.Session.get')
     def test_get_map_tile_connection_error(self, mock_get):
         """Test map tile fetch handling of connection error."""
         mock_get.side_effect = requests.exceptions.ConnectionError()
