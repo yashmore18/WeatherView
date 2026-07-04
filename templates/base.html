@@ -51,7 +51,7 @@
         <img class="wv-splash__mark" src="{{ url_for('static', filename='icons/icon-512.png') }}" alt="" width="96" height="96">
         <p class="wv-splash__title">WeatherView</p>
     </div>
-    <script>
+    <script nonce="{{ csp_nonce }}">
         (function () {
             var el = document.getElementById('wvSplash');
             var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;

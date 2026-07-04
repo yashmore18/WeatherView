@@ -1,10 +1,13 @@
 import os
 from dotenv import load_dotenv
 load_dotenv()  # this loads values from .env into os.environment
+import secrets
 import webbrowser
 import threading
 import logging
-from flask import Flask, render_template, jsonify, request, send_from_directory
+from flask import Flask, render_template, jsonify, request, send_from_directory, g
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from services.weather_api import WeatherAPI
 from services.cache import Cache
 
@@ -18,6 +21,23 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
+if app.secret_key == "dev-secret-key-change-in-production":
+    logger.warning("SESSION_SECRET not set - using the insecure default dev key. Set SESSION_SECRET in production.")
+
+# Rate limiting: protects the single (paid/metered) OpenWeatherMap API key
+# behind this proxy from being exhausted by one abusive client, and bounds
+# how much load any single IP can put on the app under the 100-concurrent-
+# user target. Default storage is per-process memory - with 3 gunicorn
+# workers (see gunicorn.conf.py) the effective ceiling per IP is up to 3x
+# a single worker's limit; swap LIMITER_STORAGE_URI to a shared backend
+# (e.g. redis://...) if perfectly-consistent cross-worker limits matter more
+# than keeping the deployment footprint small.
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["120 per minute"],
+    storage_uri=os.environ.get("LIMITER_STORAGE_URI", "memory://"),
+)
 
 # Initialize services
 weather_api = WeatherAPI()
@@ -30,6 +50,85 @@ cache = Cache(ttl=600, namespace='weather')  # 10 minutes TTL
 search_cache = Cache(ttl=300, namespace='search')  # 5 minutes TTL for location search results
 aqi_cache = Cache(ttl=1800, namespace='aqi')  # 30 minutes TTL for air quality data
 tile_cache = Cache(ttl=600, namespace='tile')  # 10 minutes TTL for map tile images (OWM tiles refresh roughly hourly)
+
+
+ALLOWED_UNITS = {'metric', 'imperial'}
+
+
+def parse_location_params():
+    """Shared validation for the city/lat/lon/units query params used by both
+    weather endpoints. Returns (city, lat, lon, units, error_response) - if
+    error_response is set, the caller should return it immediately."""
+    city = request.args.get('city')
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    units = request.args.get('units', 'metric')
+
+    if units not in ALLOWED_UNITS:
+        return None, None, None, None, (jsonify({'error': "units must be 'metric' or 'imperial'"}), 400)
+
+    if not city and not (lat and lon):
+        return None, None, None, None, (jsonify({'error': 'Either city or lat/lon coordinates are required'}), 400)
+
+    if city:
+        city = city.strip()
+        if not city or len(city) > 100:
+            return None, None, None, None, (jsonify({'error': 'City name must be between 1 and 100 characters'}), 400)
+        return city, None, None, units, None
+
+    try:
+        lat_float = float(lat)
+        lon_float = float(lon)
+    except (ValueError, TypeError):
+        return None, None, None, None, (jsonify({'error': 'Invalid latitude or longitude coordinates'}), 400)
+
+    if not (-90 <= lat_float <= 90) or not (-180 <= lon_float <= 180):
+        return None, None, None, None, (jsonify({'error': 'Latitude must be between -90/90 and longitude between -180/180'}), 400)
+
+    return None, lat_float, lon_float, units, None
+
+
+def _get_csp_nonce():
+    # Lazily generated rather than set unconditionally in a before_request
+    # hook: request handling can short-circuit before reaching that hook
+    # (e.g. flask-limiter's own before_request calling abort(429) if it's
+    # registered first), and after_request always runs regardless - reading
+    # an unset g.csp_nonce there would itself crash the response into a 500.
+    if not hasattr(g, 'csp_nonce'):
+        g.csp_nonce = secrets.token_urlsafe(16)
+    return g.csp_nonce
+
+
+@app.context_processor
+def _inject_csp_nonce():
+    return {'csp_nonce': _get_csp_nonce()}
+
+
+@app.after_request
+def _set_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    # geolocation=(self) explicitly allows the "Use My Location" feature -
+    # a blanket deny-all Permissions-Policy would silently break it.
+    response.headers['Permissions-Policy'] = 'geolocation=(self), camera=(), microphone=()'
+    # Ignored over plain HTTP, harmless to always set; matters once deployed
+    # behind HTTPS (see nginx/deployment config).
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Content-Security-Policy'] = (
+        f"default-src 'self'; "
+        f"script-src 'self' 'nonce-{_get_csp_nonce()}' https://cdn.jsdelivr.net https://unpkg.com; "
+        f"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com; "
+        f"font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
+        f"img-src 'self' data: https://*.basemaps.cartocdn.com https://unpkg.com; "
+        f"connect-src 'self'; "
+        f"object-src 'none'; "
+        f"base-uri 'self'; "
+        f"form-action 'self'; "
+        f"frame-ancestors 'none'"
+    )
+    return response
+
 
 @app.route('/')
 def index():
@@ -74,48 +173,28 @@ def service_worker():
 def get_current_weather():
     """Get current weather data for a city or coordinates."""
     try:
-        # Get query parameters
-        city = request.args.get('city')
-        lat = request.args.get('lat')
-        lon = request.args.get('lon')
-        units = request.args.get('units', 'metric')
-        
-        # Validate input
-        if not city and not (lat and lon):
-            return jsonify({'error': 'Either city or lat/lon coordinates are required'}), 400
-        
-        # Create cache key
-        if city:
-            cache_key = f"current:{city}:{units}"
-            query_params = {'q': city, 'units': units}
-        else:
-            cache_key = f"current:{lat},{lon}:{units}"
-            query_params = {'lat': lat, 'lon': lon, 'units': units}
-        
-        # Check cache first
+        city, lat, lon, units, error = parse_location_params()
+        if error:
+            return error
+
+        cache_key = f"current:{city}:{units}" if city else f"current:{lat},{lon}:{units}"
+
         cached_data = cache.get(cache_key)
         if cached_data:
             logger.info(f"Cache hit for {cache_key}")
             return jsonify(cached_data)
-        
+
         logger.info(f"Cache miss for {cache_key}")
-        
-        # Fetch from API
+
         if city:
             data = weather_api.get_current_weather(q=city, units=units)
         else:
-            try:
-                lat_float = float(lat) if lat else None
-                lon_float = float(lon) if lon else None
-                data = weather_api.get_current_weather(lat=lat_float, lon=lon_float, units=units)
-            except (ValueError, TypeError):
-                return jsonify({'error': 'Invalid latitude or longitude coordinates'}), 400
-        
-        # Cache the result
+            data = weather_api.get_current_weather(lat=lat, lon=lon, units=units)
+
         cache.set(cache_key, data)
-        
+
         return jsonify(data)
-        
+
     except ValueError as e:
         logger.warning(f"Invalid request: {str(e)}")
         return jsonify({'error': str(e)}), 400
@@ -127,48 +206,28 @@ def get_current_weather():
 def get_weather_forecast():
     """Get 5-day weather forecast for a city or coordinates."""
     try:
-        # Get query parameters
-        city = request.args.get('city')
-        lat = request.args.get('lat')
-        lon = request.args.get('lon')
-        units = request.args.get('units', 'metric')
-        
-        # Validate input
-        if not city and not (lat and lon):
-            return jsonify({'error': 'Either city or lat/lon coordinates are required'}), 400
-        
-        # Create cache key
-        if city:
-            cache_key = f"forecast:{city}:{units}"
-            query_params = {'q': city, 'units': units}
-        else:
-            cache_key = f"forecast:{lat},{lon}:{units}"
-            query_params = {'lat': lat, 'lon': lon, 'units': units}
-        
-        # Check cache first
+        city, lat, lon, units, error = parse_location_params()
+        if error:
+            return error
+
+        cache_key = f"forecast:{city}:{units}" if city else f"forecast:{lat},{lon}:{units}"
+
         cached_data = cache.get(cache_key)
         if cached_data:
             logger.info(f"Cache hit for {cache_key}")
             return jsonify(cached_data)
-        
+
         logger.info(f"Cache miss for {cache_key}")
-        
-        # Fetch from API
+
         if city:
             data = weather_api.get_forecast(q=city, units=units)
         else:
-            try:
-                lat_float = float(lat) if lat else None
-                lon_float = float(lon) if lon else None
-                data = weather_api.get_forecast(lat=lat_float, lon=lon_float, units=units)
-            except (ValueError, TypeError):
-                return jsonify({'error': 'Invalid latitude or longitude coordinates'}), 400
-        
-        # Cache the result
+            data = weather_api.get_forecast(lat=lat, lon=lon, units=units)
+
         cache.set(cache_key, data)
-        
+
         return jsonify(data)
-        
+
     except ValueError as e:
         logger.warning(f"Invalid request: {str(e)}")
         return jsonify({'error': str(e)}), 400
@@ -181,9 +240,9 @@ def search_locations():
     """Search for locations using geocoding API."""
     try:
         query = request.args.get('q')
-        if not query or len(query.strip()) < 2:
-            return jsonify({'error': 'Search query must be at least 2 characters'}), 400
-        
+        if not query or not (2 <= len(query.strip()) <= 100):
+            return jsonify({'error': 'Search query must be between 2 and 100 characters'}), 400
+
         # Cache search results briefly (5 minutes)
         cache_key = f"search:{query.lower()}"
         cached_data = search_cache.get(cache_key)
@@ -215,6 +274,13 @@ def map_tile(layer, z, x, y):
     """Proxy OpenWeatherMap tile requests so the API key stays server-side."""
     if layer not in ALLOWED_MAP_LAYERS:
         return jsonify({'error': 'Unknown map layer'}), 400
+
+    # Standard slippy-map tile bounds: at zoom z there are 2**z tiles per
+    # axis. Rejecting out-of-range x/y (and an unreasonable z) up front
+    # avoids pointless upstream calls and cache entries for tile coordinates
+    # that can't exist.
+    if not (0 <= z <= 19) or not (0 <= x < 2 ** z) or not (0 <= y < 2 ** z):
+        return jsonify({'error': 'Tile coordinates out of range'}), 400
 
     # Same (layer, z, x, y) tile is requested repeatedly - by the same user
     # panning back over an area, and independently by every other concurrent
@@ -251,7 +317,10 @@ def get_air_quality():
             lon_float = float(lon)
         except (ValueError, TypeError):
             return jsonify({'error': 'Invalid latitude or longitude coordinates'}), 400
-        
+
+        if not (-90 <= lat_float <= 90) or not (-180 <= lon_float <= 180):
+            return jsonify({'error': 'Latitude must be between -90/90 and longitude between -180/180'}), 400
+
         # Cache air quality data briefly (30 minutes)
         cache_key = f"aqi:{lat},{lon}"
         cached_data = aqi_cache.get(cache_key)
@@ -301,4 +370,11 @@ if __name__ == '__main__':
     # Start a thread to open the browser automatically
     threading.Timer(1.0, open_browser).start()
     
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # The Werkzeug debugger (enabled by debug=True) allows arbitrary code
+    # execution from anyone who can reach it - fine for this documented
+    # local-dev entry point, but made explicitly overridable via env var
+    # rather than unconditionally hardcoded, since this script binds to all
+    # interfaces (0.0.0.0). Production deployments use gunicorn (Procfile/
+    # .replit), which never runs this __main__ block at all.
+    debug_mode = os.environ.get('FLASK_DEBUG', 'true').lower() in ('1', 'true', 'yes')
+    app.run(host='0.0.0.0', port=5000, debug=debug_mode)
