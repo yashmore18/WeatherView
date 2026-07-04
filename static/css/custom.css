@@ -102,7 +102,10 @@
   /* ---- Text ---- */
   --wv-color-text-primary: var(--wv-color-neutral-900);
   --wv-color-text-secondary: var(--wv-color-neutral-600);
-  --wv-color-text-tertiary: var(--wv-color-neutral-400);
+  /* neutral-400 measures ~2.5:1 against surface/surface-hover in light mode,
+     well under WCAG AA's 4.5:1 for normal text - neutral-500 clears ~4.75:1
+     while staying visibly the most muted of the three text tones. */
+  --wv-color-text-tertiary: var(--wv-color-neutral-500);
   --wv-color-text-inverse: var(--wv-color-neutral-0);
   --wv-color-text-link: var(--wv-color-blue-600);
   --wv-color-text-link-hover: var(--wv-color-blue-700);

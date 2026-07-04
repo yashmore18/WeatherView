@@ -39,11 +39,15 @@ class MapPage {
         this.marker = null;
         this.activeLayer = null;
         this.baseLayer = null;
+        // OpenWeatherMap's tiles already bake in their own per-pixel alpha
+        // (e.g. temp_new tops out around 30% opaque) - they're designed to be
+        // laid over a basemap at full opacity, not dimmed further. Multiplying
+        // by an additional 0.55-0.8 here made every layer nearly invisible.
         this.overlays = {
-            precipitation: L.tileLayer('/api/map/tile/precipitation_new/{z}/{x}/{y}', { opacity: 0.75, maxZoom: 19 }),
-            clouds: L.tileLayer('/api/map/tile/clouds_new/{z}/{x}/{y}', { opacity: 0.55, maxZoom: 19 }),
-            temp: L.tileLayer('/api/map/tile/temp_new/{z}/{x}/{y}', { opacity: 0.6, maxZoom: 19 }),
-            wind: L.tileLayer('/api/map/tile/wind_new/{z}/{x}/{y}', { opacity: 0.8, maxZoom: 19 })
+            precipitation: L.tileLayer('/api/map/tile/precipitation_new/{z}/{x}/{y}', { opacity: 1, maxZoom: 19 }),
+            clouds: L.tileLayer('/api/map/tile/clouds_new/{z}/{x}/{y}', { opacity: 1, maxZoom: 19 }),
+            temp: L.tileLayer('/api/map/tile/temp_new/{z}/{x}/{y}', { opacity: 1, maxZoom: 19 }),
+            wind: L.tileLayer('/api/map/tile/wind_new/{z}/{x}/{y}', { opacity: 1, maxZoom: 19 })
         };
 
         this.initMap();
