@@ -4,6 +4,9 @@
 
 {% block content %}
 <div class="wv-page">
+    <!-- Smart Alerts (rendered by pages/today.js) -->
+    <div id="alertsContainer" class="wv-alerts-container" role="region" aria-label="Weather alerts"></div>
+
     <!-- Hero Weather Card -->
     <section id="heroCard" class="wv-hero-card" style="display: none;" aria-labelledby="heroTitle">
         <div id="heroSkeleton" class="wv-hero-skeleton glass-card" aria-hidden="true">
@@ -92,95 +95,6 @@
         </div>
     </section>
 
-    <!-- Hourly Forecast Section -->
-    <section id="hourlySection" class="wv-section" style="display: none;" aria-labelledby="hourlyTitle">
-        <header class="wv-section__header">
-            <h2 id="hourlyTitle" class="wv-section__title">Hourly Forecast</h2>
-            <div class="wv-section__actions">
-                <button type="button" class="wv-btn wv-btn--ghost" id="hourlyPrev" aria-label="Previous hours">
-                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
-                </button>
-                <button type="button" class="wv-btn wv-btn--ghost" id="hourlyNext" aria-label="Next hours">
-                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
-                </button>
-            </div>
-        </header>
-        <div id="hourlySkeleton" class="wv-hourly-skeleton" aria-hidden="true">
-            <div class="wv-skeleton wv-skeleton--block"></div>
-            <div class="wv-skeleton wv-skeleton--block"></div>
-            <div class="wv-skeleton wv-skeleton--block"></div>
-            <div class="wv-skeleton wv-skeleton--block"></div>
-            <div class="wv-skeleton wv-skeleton--block"></div>
-            <div class="wv-skeleton wv-skeleton--block"></div>
-        </div>
-        <div class="wv-hourly-scroll" id="hourlyScroll" role="list" aria-label="Hourly forecast items">
-            <!-- Hourly items populated by JS -->
-        </div>
-    </section>
-
-    <!-- Daily Forecast Section -->
-    <section id="dailySection" class="wv-section" style="display: none;" aria-labelledby="dailyTitle">
-        <header class="wv-section__header">
-            <h2 id="dailyTitle" class="wv-section__title">7-Day Forecast</h2>
-        </header>
-        <div id="dailySkeleton" class="wv-daily-skeleton" aria-hidden="true">
-            <div class="wv-skeleton wv-skeleton--block"></div>
-            <div class="wv-skeleton wv-skeleton--block"></div>
-            <div class="wv-skeleton wv-skeleton--block"></div>
-            <div class="wv-skeleton wv-skeleton--block"></div>
-            <div class="wv-skeleton wv-skeleton--block"></div>
-            <div class="wv-skeleton wv-skeleton--block"></div>
-            <div class="wv-skeleton wv-skeleton--block"></div>
-        </div>
-        <div class="wv-daily-list" id="dailyForecast" role="list" aria-label="Daily forecast items">
-            <!-- Daily items populated by JS -->
-        </div>
-    </section>
-
-    <!-- Weather Details Grid -->
-    <section id="detailsSection" class="wv-section" style="display: none;" aria-labelledby="detailsTitle">
-        <header class="wv-section__header">
-            <h2 id="detailsTitle" class="wv-section__title">Weather Details</h2>
-        </header>
-        <div id="detailsSkeleton" class="wv-details-skeleton" aria-hidden="true">
-            <div class="wv-skeleton wv-skeleton--block"></div>
-            <div class="wv-skeleton wv-skeleton--block"></div>
-            <div class="wv-skeleton wv-skeleton--block"></div>
-            <div class="wv-skeleton wv-skeleton--block"></div>
-        </div>
-        <div class="wv-details-grid" id="detailsGrid" role="list" aria-label="Weather detail cards">
-            <!-- Detail cards populated by JS -->
-        </div>
-    </section>
-
-    <!-- Temperature Chart Section -->
-    <section id="chartSection" class="wv-section" style="display: none;" aria-labelledby="chartTitle">
-        <header class="wv-section__header">
-            <h2 id="chartTitle" class="wv-section__title">Temperature Trend</h2>
-        </header>
-        <div class="wv-chart-card glass-card">
-            <div class="wv-chart-card__body">
-                <canvas id="temperatureChart"
-                        aria-label="Temperature forecast chart over 5 days"
-                        role="img"></canvas>
-            </div>
-        </div>
-    </section>
-
-    <!-- Favorites Section -->
-    <section id="favoritesSection" class="wv-section" style="display: none;" aria-labelledby="favoritesTitle">
-        <header class="wv-section__header">
-            <h2 id="favoritesTitle" class="wv-section__title">Favorite Cities</h2>
-            <button type="button" class="wv-btn wv-btn--ghost wv-btn--sm" id="manageFavorites" aria-label="Manage favorites">
-                <i class="fas fa-cog" aria-hidden="true"></i>
-                <span>Manage</span>
-            </button>
-        </header>
-        <div class="wv-favorites-list" id="favoritesList" role="list" aria-label="Favorite cities">
-            <!-- Favorites populated by JS -->
-        </div>
-    </section>
-
     <!-- Empty/Welcome State -->
     <section id="emptyState" class="wv-empty-state" aria-labelledby="emptyTitle">
         <div class="wv-empty-state__inner glass-card">
@@ -200,7 +114,7 @@
                 </button>
                 <button type="button"
                         class="wv-btn wv-btn--secondary glass-btn wv-btn--lg"
-                        onclick="app.getLocationWeather()">
+                        onclick="wv.getLocationWeather()">
                     <i class="fas fa-location-arrow" aria-hidden="true"></i>
                     <span>Use My Location</span>
                 </button>
@@ -221,36 +135,10 @@
             </ul>
         </div>
     </section>
-
-    <!-- Error Toast Container -->
-    <div id="toastContainer" class="wv-toast-container" role="region" aria-label="Notifications" aria-live="polite"></div>
 </div>
+{% endblock %}
 
-<script>
-// Hide empty state when weather data is displayed
-document.addEventListener('DOMContentLoaded', function() {
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-                const heroCard = document.getElementById('heroCard');
-                const emptyState = document.getElementById('emptyState');
-                
-                if (heroCard && heroCard.style.display !== 'none') {
-                    emptyState.style.display = 'none';
-                } else if (heroCard && heroCard.style.display === 'none') {
-                    emptyState.style.display = 'flex';
-                }
-            }
-        });
-    });
-
-    const heroCard = document.getElementById('heroCard');
-    if (heroCard) {
-        observer.observe(heroCard, {
-            attributes: true,
-            attributeFilter: ['style']
-        });
-    }
-});
-</script>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/alerts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pages/today.js') }}"></script>
 {% endblock %}

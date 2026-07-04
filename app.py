@@ -27,9 +27,33 @@ aqi_cache = Cache(ttl=1800)  # 30 minutes TTL for air quality data
 
 @app.route('/')
 def index():
-    """Render the main weather application page."""
-    logger.info("Serving main page")
-    return render_template('index.html')
+    """Render the Today page (current conditions hero + smart alerts)."""
+    logger.info("Serving Today page")
+    return render_template('index.html', active_page='today')
+
+@app.route('/forecast')
+def forecast_page():
+    """Render the Forecast page (hourly, 7-day, temperature chart, details)."""
+    logger.info("Serving Forecast page")
+    return render_template('forecast.html', active_page='forecast')
+
+@app.route('/map')
+def map_page():
+    """Render the interactive weather radar Map page."""
+    logger.info("Serving Map page")
+    return render_template('map.html', active_page='map')
+
+@app.route('/locations')
+def locations_page():
+    """Render the Locations page (search, favorites, comparison)."""
+    logger.info("Serving Locations page")
+    return render_template('locations.html', active_page='locations')
+
+@app.route('/settings')
+def settings_page():
+    """Render the Settings page (units, theme, alert preferences)."""
+    logger.info("Serving Settings page")
+    return render_template('settings.html', active_page='settings')
 
 @app.route('/sw.js')
 def service_worker():
@@ -177,6 +201,24 @@ def search_locations():
     except Exception as e:
         logger.error(f"Error searching locations: {str(e)}")
         return jsonify({'error': 'Failed to search locations'}), 500
+
+ALLOWED_MAP_LAYERS = {'precipitation_new', 'clouds_new', 'temp_new', 'wind_new'}
+
+@app.route('/api/map/tile/<layer>/<int:z>/<int:x>/<int:y>')
+def map_tile(layer, z, x, y):
+    """Proxy OpenWeatherMap tile requests so the API key stays server-side."""
+    if layer not in ALLOWED_MAP_LAYERS:
+        return jsonify({'error': 'Unknown map layer'}), 400
+
+    try:
+        tile_bytes, content_type = weather_api.get_map_tile(layer, z, x, y)
+    except ValueError as e:
+        logger.warning(f"Map tile error: {str(e)}")
+        return jsonify({'error': str(e)}), 502
+
+    response = app.response_class(tile_bytes, mimetype=content_type)
+    response.headers['Cache-Control'] = 'public, max-age=600'
+    return response
 
 @app.route('/api/air-quality')
 def get_air_quality():

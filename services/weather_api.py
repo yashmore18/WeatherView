@@ -2,15 +2,16 @@ import os
 import requests
 import logging
 from datetime import datetime, timezone, timedelta
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 class WeatherAPI:
     """OpenWeatherMap API client with response mapping to internal contract."""
-    
+
     BASE_URL = "https://api.openweathermap.org/data/2.5"
     GEO_URL = "https://api.openweathermap.org/geo/1.0"
+    TILE_URL = "https://tile.openweathermap.org/map"
     
     def __init__(self):
         self.api_key = os.environ.get('WEATHER_API_KEY')
@@ -136,6 +137,30 @@ class WeatherAPI:
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Network error: {str(e)}")
     
+    def get_map_tile(self, layer: str, z: int, x: int, y: int) -> Tuple[bytes, str]:
+        """Fetch a single OpenWeatherMap weather tile image, keeping the API
+        key server-side (the client only ever sees /api/map/tile/... URLs)."""
+        url = f"{self.TILE_URL}/{layer}/{z}/{x}/{y}.png"
+        params = {'appid': self.api_key}
+
+        try:
+            logger.info(f"Making map tile request to {layer}/{z}/{x}/{y}")
+            response = requests.get(url, params=params, timeout=10)
+
+            if response.status_code == 401:
+                raise ValueError("Invalid or missing API key")
+            elif response.status_code != 200:
+                raise ValueError(f"Tile API error: {response.status_code}")
+
+            return response.content, response.headers.get('Content-Type', 'image/png')
+
+        except requests.exceptions.Timeout:
+            raise ValueError("Tile request timeout - please try again")
+        except requests.exceptions.ConnectionError:
+            raise ValueError("Network error, please check connection")
+        except requests.exceptions.RequestException as e:
+            raise ValueError(f"Network error: {str(e)}")
+
     def _convert_timestamp(self, timestamp: int, timezone_offset: int) -> str:
         """Convert Unix timestamp to ISO string adjusted for timezone."""
         dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)

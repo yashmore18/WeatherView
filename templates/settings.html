@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - WeatherView{% endblock %}
+
+{% block content %}
+<div class="wv-page">
+    <section class="wv-section" aria-labelledby="settingsUnitsTitle">
+        <header class="wv-section__header">
+            <h2 id="settingsUnitsTitle" class="wv-section__title">Units</h2>
+        </header>
+        <div class="wv-settings-card glass-card">
+            <div class="wv-settings-row">
+                <div>
+                    <p class="wv-settings-row__label">Temperature units</p>
+                    <p class="wv-settings-row__hint">Applies across the whole app, same as the header toggle.</p>
+                </div>
+                <div class="wv-toggle" role="group" aria-label="Temperature units">
+                    <span class="wv-toggle__label" id="settingsUnitsLabel">°C</span>
+                    <label class="wv-toggle__switch" for="settingsUnitsToggle">
+                        <input type="checkbox" id="settingsUnitsToggle" class="wv-toggle__input" aria-label="Toggle between Celsius and Fahrenheit">
+                        <span class="wv-toggle__slider" aria-hidden="true"></span>
+                    </label>
+                    <span class="wv-toggle__label" id="settingsUnitsLabelAlt">°F</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="wv-section" aria-labelledby="settingsThemeTitle">
+        <header class="wv-section__header">
+            <h2 id="settingsThemeTitle" class="wv-section__title">Appearance</h2>
+        </header>
+        <div class="wv-settings-card glass-card">
+            <div class="wv-settings-row">
+                <div>
+                    <p class="wv-settings-row__label">Dark mode</p>
+                    <p class="wv-settings-row__hint">Same as the moon/sun icon in the header.</p>
+                </div>
+                <div class="wv-toggle" role="group" aria-label="Dark mode">
+                    <label class="wv-toggle__switch" for="settingsThemeToggle">
+                        <input type="checkbox" id="settingsThemeToggle" class="wv-toggle__input" aria-label="Toggle dark mode">
+                        <span class="wv-toggle__slider" aria-hidden="true"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="wv-section" aria-labelledby="settingsAlertsTitle">
+        <header class="wv-section__header">
+            <h2 id="settingsAlertsTitle" class="wv-section__title">Smart Alerts</h2>
+        </header>
+        <div class="wv-settings-card glass-card">
+            <div class="wv-settings-row">
+                <div>
+                    <p class="wv-settings-row__label">Rain likely soon</p>
+                </div>
+                <div class="wv-toggle" role="group" aria-label="Rain alerts">
+                    <label class="wv-toggle__switch" for="alertPrefRain">
+                        <input type="checkbox" id="alertPrefRain" class="wv-toggle__input" checked aria-label="Toggle rain alerts">
+                        <span class="wv-toggle__slider" aria-hidden="true"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="wv-settings-row">
+                <div>
+                    <p class="wv-settings-row__label">Air quality spikes</p>
+                </div>
+                <div class="wv-toggle" role="group" aria-label="Air quality alerts">
+                    <label class="wv-toggle__switch" for="alertPrefAqi">
+                        <input type="checkbox" id="alertPrefAqi" class="wv-toggle__input" checked aria-label="Toggle air quality alerts">
+                        <span class="wv-toggle__slider" aria-hidden="true"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="wv-settings-row">
+                <div>
+                    <p class="wv-settings-row__label">Frost / temperature swings</p>
+                </div>
+                <div class="wv-toggle" role="group" aria-label="Frost and temperature swing alerts">
+                    <label class="wv-toggle__switch" for="alertPrefFrost">
+                        <input type="checkbox" id="alertPrefFrost" class="wv-toggle__input" checked aria-label="Toggle frost and temperature swing alerts">
+                        <span class="wv-toggle__slider" aria-hidden="true"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="wv-settings-row wv-settings-row--note">
+                <p class="wv-settings-row__hint">
+                    <i class="fas fa-bell-slash" aria-hidden="true"></i>
+                    Push notifications: coming soon.
+                </p>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pages/settings.js') }}"></script>
+{% endblock %}

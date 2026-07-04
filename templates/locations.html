@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Locations - WeatherView{% endblock %}
+
+{% block content %}
+<div class="wv-page">
+    <!-- Favorites Section -->
+    <section id="favoritesSection" class="wv-section" aria-labelledby="favoritesTitle">
+        <header class="wv-section__header">
+            <h2 id="favoritesTitle" class="wv-section__title">Favorite Cities</h2>
+            <button type="button" class="wv-btn wv-btn--ghost wv-btn--sm" id="manageFavorites" aria-label="Manage favorites">
+                <i class="fas fa-cog" aria-hidden="true"></i>
+                <span>Manage</span>
+            </button>
+        </header>
+        <div class="wv-favorites-list" id="favoritesList" role="list" aria-label="Favorite cities">
+            <!-- Favorites populated by JS -->
+        </div>
+    </section>
+
+    <!-- Saved-city comparison -->
+    <section id="comparisonSection" class="wv-section" aria-labelledby="comparisonTitle">
+        <header class="wv-section__header">
+            <h2 id="comparisonTitle" class="wv-section__title">Compare Conditions</h2>
+        </header>
+        <div class="wv-comparison-grid" id="comparisonGrid" role="list" aria-label="Favorite city conditions">
+            <!-- Comparison cards populated by JS -->
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pages/locations.js') }}"></script>
+{% endblock %}

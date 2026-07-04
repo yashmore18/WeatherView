@@ -227,6 +227,49 @@ class TestWeatherAPI:
         with pytest.raises(ValueError, match="Either city name .* or coordinates .* must be provided"):
             self.weather_api.get_forecast(units='metric')
     
+    @patch('services.weather_api.requests.get')
+    def test_get_map_tile_success(self, mock_get):
+        """Test successful map tile fetch returns raw bytes and content type."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.content = b'\x89PNG fake tile bytes'
+        mock_response.headers = {'Content-Type': 'image/png'}
+        mock_get.return_value = mock_response
+
+        tile_bytes, content_type = self.weather_api.get_map_tile('precipitation_new', 3, 4, 4)
+
+        args, kwargs = mock_get.call_args
+        assert 'precipitation_new/3/4/4' in args[0]
+        assert kwargs['params']['appid'] == 'test_api_key'
+        assert tile_bytes == b'\x89PNG fake tile bytes'
+        assert content_type == 'image/png'
+
+    @patch('services.weather_api.requests.get')
+    def test_get_map_tile_invalid_key(self, mock_get):
+        """Test map tile fetch with an invalid API key."""
+        mock_response = Mock()
+        mock_response.status_code = 401
+        mock_get.return_value = mock_response
+
+        with pytest.raises(ValueError, match="Invalid or missing API key"):
+            self.weather_api.get_map_tile('clouds_new', 1, 0, 0)
+
+    @patch('services.weather_api.requests.get')
+    def test_get_map_tile_timeout(self, mock_get):
+        """Test map tile fetch handling of network timeout."""
+        mock_get.side_effect = requests.exceptions.Timeout()
+
+        with pytest.raises(ValueError, match="Tile request timeout - please try again"):
+            self.weather_api.get_map_tile('temp_new', 1, 0, 0)
+
+    @patch('services.weather_api.requests.get')
+    def test_get_map_tile_connection_error(self, mock_get):
+        """Test map tile fetch handling of connection error."""
+        mock_get.side_effect = requests.exceptions.ConnectionError()
+
+        with pytest.raises(ValueError, match="Network error, please check connection"):
+            self.weather_api.get_map_tile('wind_new', 1, 0, 0)
+
     def test_convert_timestamp(self):
         """Test timestamp conversion with timezone offset."""
         # Test with UTC (offset 0)

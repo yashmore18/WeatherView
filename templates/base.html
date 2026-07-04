@@ -11,6 +11,11 @@
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌤️</text></svg>">
 
+    <!-- Inter (app default font) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -23,6 +28,12 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 
+    <!-- iOS home-screen support (Safari doesn't honor manifest icons/beforeinstallprompt) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WeatherView">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%232563eb' rx='24'/><text x='96' y='140' font-size='100' text-anchor='middle' fill='white'>🌤️</text></svg>">
+
     <!-- Open Graph meta tags -->
     <meta property="og:title" content="WeatherView">
     <meta property="og:description" content="Get current weather and 5-day forecasts for any city">
@@ -30,7 +41,7 @@
 
     {% block head %}{% endblock %}
 </head>
-<body>
+<body data-page="{{ active_page }}">
     <!-- Dynamic Weather Scene Background -->
     <div id="wvScene" class="wv-scene" data-condition="clear" data-night="false" aria-hidden="true">
         <div class="wv-scene__gradient"></div>
@@ -42,36 +53,50 @@
     </div>
 
     <!-- Left Navigation Sidebar -->
-    <aside class="wv-sidebar" role="navigation" aria-label="Main navigation">
+    <aside id="wvSidebar" class="wv-sidebar" role="navigation" aria-label="Main navigation">
         <div class="wv-sidebar__brand">
             <i class="fas fa-cloud-sun"></i>
             <span>WeatherView</span>
         </div>
         <nav class="wv-sidebar__nav">
-            <a href="#heroCard" class="wv-nav-item wv-nav-item--active" data-target="heroCard" aria-current="page">
+            <a href="{{ url_for('index') }}" class="wv-nav-item{{ ' wv-nav-item--active' if active_page == 'today' else '' }}"{{ ' aria-current="page"' if active_page == 'today' else '' }}>
                 <i class="fas fa-home"></i>
                 <span>Today</span>
+                <span id="alertsBadge" class="wv-nav-badge" style="display: none;" aria-hidden="true"></span>
             </a>
-            <a href="#dailySection" class="wv-nav-item" data-target="dailySection">
+            <a href="{{ url_for('forecast_page') }}" class="wv-nav-item{{ ' wv-nav-item--active' if active_page == 'forecast' else '' }}"{{ ' aria-current="page"' if active_page == 'forecast' else '' }}>
                 <i class="fas fa-calendar-week"></i>
                 <span>Forecast</span>
             </a>
-            <a href="#favoritesSection" class="wv-nav-item" data-target="favoritesSection">
+            <a href="{{ url_for('map_page') }}" class="wv-nav-item{{ ' wv-nav-item--active' if active_page == 'map' else '' }}"{{ ' aria-current="page"' if active_page == 'map' else '' }}>
+                <i class="fas fa-cloud-showers-heavy"></i>
+                <span>Map</span>
+            </a>
+            <a href="{{ url_for('locations_page') }}" class="wv-nav-item{{ ' wv-nav-item--active' if active_page == 'locations' else '' }}"{{ ' aria-current="page"' if active_page == 'locations' else '' }}>
                 <i class="fas fa-map-marker-alt"></i>
                 <span>Locations</span>
             </a>
-            <a href="#wvHeader" class="wv-nav-item" data-target="wvHeader">
+            <a href="{{ url_for('settings_page') }}" class="wv-nav-item{{ ' wv-nav-item--active' if active_page == 'settings' else '' }}"{{ ' aria-current="page"' if active_page == 'settings' else '' }}>
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
             </a>
         </nav>
     </aside>
+    <div id="wvSidebarBackdrop" class="wv-sidebar-backdrop"></div>
 
     <!-- Main Content Area -->
     <div class="wv-main">
         <!-- Top Bar -->
         <header id="wvHeader" class="wv-header" role="banner">
             <div class="wv-header__left">
+                <button type="button"
+                        id="navToggle"
+                        class="wv-icon-btn glass-btn wv-nav-toggle"
+                        aria-label="Open navigation menu"
+                        aria-expanded="false"
+                        aria-controls="wvSidebar">
+                    <i class="fas fa-bars" aria-hidden="true"></i>
+                </button>
                 <h1 class="wv-header__title"></h1>
             </div>
             <div class="wv-header__center">
@@ -148,9 +173,29 @@
     <!-- Hidden screen reader announcements -->
     <div aria-live="polite" aria-atomic="true" class="sr-only" id="srAnnouncements"></div>
 
+    <!-- Shared Toast Container (cross-page notifications) -->
+    <div id="toastContainer" class="wv-toast-container" role="region" aria-label="Notifications" aria-live="polite"></div>
+
+    <!-- Install PWA Prompt -->
+    <div id="pwaInstallPrompt" class="wv-install-prompt glass-card" role="dialog" aria-label="Install WeatherView" style="display: none;">
+        <div class="wv-install-prompt__icon" aria-hidden="true">
+            <i class="fas fa-cloud-sun"></i>
+        </div>
+        <div class="wv-install-prompt__content">
+            <p class="wv-install-prompt__title">Install WeatherView</p>
+            <p class="wv-install-prompt__desc">Add it to your home screen for a faster, full-screen experience.</p>
+        </div>
+        <div class="wv-install-prompt__actions">
+            <button type="button" class="wv-btn wv-btn--primary wv-btn--sm" id="pwaInstallAccept">Install</button>
+            <button type="button" class="wv-icon-btn glass-btn" id="pwaInstallDismiss" aria-label="Dismiss install prompt">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+        </div>
+    </div>
+
     <!-- Custom JavaScript -->
     <script src="{{ url_for('static', filename='js/weather-scene.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/wv-shared.js') }}"></script>
 
     {% block scripts %}{% endblock %}
 </body>

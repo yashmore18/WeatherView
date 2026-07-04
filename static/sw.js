@@ -1,13 +1,25 @@
 // Service Worker for WeatherView PWA
-const CACHE_NAME = 'yash-weather-app-v2';
+const CACHE_NAME = 'yash-weather-app-v3';
 const STATIC_CACHE_URLS = [
   '/',
+  '/forecast',
+  '/map',
+  '/locations',
+  '/settings',
   '/static/css/custom.css',
   '/static/js/weather-scene.js',
-  '/static/js/app.js',
+  '/static/js/wv-shared.js',
+  '/static/js/pages/today.js',
+  '/static/js/pages/forecast.js',
+  '/static/js/pages/map.js',
+  '/static/js/pages/locations.js',
+  '/static/js/pages/settings.js',
   '/static/manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
   'https://cdn.jsdelivr.net/npm/chart.js'
+  // Leaflet + OpenStreetMap/OpenWeatherMap tiles are deliberately not
+  // precached here - the map page degrades gracefully offline (blank
+  // tiles), and the tile key space is far too large to precache.
 ];
 
 // Install event - cache static assets

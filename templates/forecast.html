@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Forecast - WeatherView{% endblock %}
+
+{% block content %}
+<div class="wv-page">
+    <!-- Hourly Forecast Section -->
+    <section id="hourlySection" class="wv-section" style="display: none;" aria-labelledby="hourlyTitle">
+        <header class="wv-section__header">
+            <h2 id="hourlyTitle" class="wv-section__title">Hourly Forecast</h2>
+            <div class="wv-section__actions">
+                <button type="button" class="wv-btn wv-btn--ghost" id="hourlyPrev" aria-label="Previous hours">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="wv-btn wv-btn--ghost" id="hourlyNext" aria-label="Next hours">
+                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </button>
+            </div>
+        </header>
+        <div id="hourlySkeleton" class="wv-hourly-skeleton" aria-hidden="true">
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+        </div>
+        <div class="wv-hourly-scroll" id="hourlyScroll" role="list" aria-label="Hourly forecast items">
+            <!-- Hourly items populated by JS -->
+        </div>
+    </section>
+
+    <!-- Daily Forecast Section -->
+    <section id="dailySection" class="wv-section" style="display: none;" aria-labelledby="dailyTitle">
+        <header class="wv-section__header">
+            <h2 id="dailyTitle" class="wv-section__title">7-Day Forecast</h2>
+        </header>
+        <div id="dailySkeleton" class="wv-daily-skeleton" aria-hidden="true">
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+        </div>
+        <div class="wv-daily-list" id="dailyForecast" role="list" aria-label="Daily forecast items">
+            <!-- Daily items populated by JS -->
+        </div>
+    </section>
+
+    <!-- Temperature Chart Section -->
+    <section id="chartSection" class="wv-section" style="display: none;" aria-labelledby="chartTitle">
+        <header class="wv-section__header">
+            <h2 id="chartTitle" class="wv-section__title">Temperature Trend</h2>
+        </header>
+        <div class="wv-chart-card glass-card">
+            <div class="wv-chart-card__body">
+                <canvas id="temperatureChart"
+                        aria-label="Temperature forecast chart over 5 days"
+                        role="img"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Weather Details Grid (includes Air Quality) -->
+    <section id="detailsSection" class="wv-section" style="display: none;" aria-labelledby="detailsTitle">
+        <header class="wv-section__header">
+            <h2 id="detailsTitle" class="wv-section__title">Weather Details</h2>
+        </header>
+        <div id="detailsSkeleton" class="wv-details-skeleton" aria-hidden="true">
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+            <div class="wv-skeleton wv-skeleton--block"></div>
+        </div>
+        <div class="wv-details-grid" id="detailsGrid" role="list" aria-label="Weather detail cards">
+            <!-- Detail cards populated by JS -->
+        </div>
+    </section>
+
+    <!-- Empty State -->
+    <section id="forecastEmptyState" class="wv-empty-state" aria-labelledby="forecastEmptyTitle">
+        <div class="wv-empty-state__inner glass-card">
+            <div class="wv-empty-state__icon">
+                <i class="fas fa-calendar-week" aria-hidden="true"></i>
+            </div>
+            <h1 id="forecastEmptyTitle" class="wv-empty-state__title">No forecast yet</h1>
+            <p class="wv-empty-state__description">
+                Search a city from the header above to see its hourly and 7-day forecast.
+            </p>
+            <div class="wv-empty-state__actions">
+                <button type="button"
+                        class="wv-btn wv-btn--primary wv-btn--lg"
+                        onclick="document.getElementById('citySearch').focus()">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <span>Search a City</span>
+                </button>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pages/forecast.js') }}"></script>
+{% endblock %}

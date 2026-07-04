@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Map - WeatherView{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+{% endblock %}
+
+{% block content %}
+<div class="wv-page">
+    <section class="wv-map-section" aria-labelledby="mapTitle">
+        <header class="wv-section__header sr-only">
+            <h2 id="mapTitle" class="wv-section__title">Weather Radar Map</h2>
+        </header>
+        <div class="wv-map-wrap">
+            <div id="wvMap" class="wv-map" role="img" aria-label="Interactive weather radar map"></div>
+            <div class="wv-map-controls glass-card" role="group" aria-label="Map layer selection">
+                <button type="button" class="wv-btn wv-btn--secondary wv-map-layer-btn" data-layer="precipitation" aria-pressed="false">
+                    <i class="fas fa-cloud-rain" aria-hidden="true"></i>
+                    <span>Precipitation</span>
+                </button>
+                <button type="button" class="wv-btn wv-btn--secondary wv-map-layer-btn" data-layer="clouds" aria-pressed="false">
+                    <i class="fas fa-cloud" aria-hidden="true"></i>
+                    <span>Clouds</span>
+                </button>
+                <button type="button" class="wv-btn wv-btn--secondary wv-map-layer-btn" data-layer="temp" aria-pressed="false">
+                    <i class="fas fa-temperature-high" aria-hidden="true"></i>
+                    <span>Temperature</span>
+                </button>
+                <button type="button" class="wv-btn wv-btn--secondary wv-map-layer-btn" data-layer="wind" aria-pressed="false">
+                    <i class="fas fa-wind" aria-hidden="true"></i>
+                    <span>Wind</span>
+                </button>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pages/map.js') }}"></script>
+{% endblock %}
