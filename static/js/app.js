@@ -212,7 +212,7 @@ class WeatherApp {
             }
 
             const locations = await response.json();
-            this.showSearchDropdown(locations);
+            this.showSearchDropdown(locations, query);
 
         } catch (error) {
             console.error('Error searching locations:', error);
@@ -220,11 +220,17 @@ class WeatherApp {
         }
     }
 
-    showSearchDropdown(locations) {
+    showSearchDropdown(locations, query = '') {
         const dropdown = document.getElementById('searchDropdown');
 
         if (!locations || locations.length === 0) {
-            this.hideSearchDropdown();
+            dropdown.innerHTML = `
+                <div class="wv-search__no-results">
+                    <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                    <span>No locations found${query ? ` for "${this.escapeHtml(query)}"` : ''}</span>
+                </div>
+            `;
+            dropdown.classList.add('show');
             return;
         }
 

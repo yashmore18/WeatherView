@@ -1314,6 +1314,19 @@ body {
   font-size: var(--wv-text-base);
 }
 
+.wv-search__no-results {
+  display: flex;
+  align-items: center;
+  gap: var(--wv-space-3);
+  padding: var(--wv-dropdown-item-padding);
+  color: var(--wv-color-text-tertiary);
+  font-size: var(--wv-text-sm);
+}
+
+.wv-search__no-results i {
+  font-size: var(--wv-text-base);
+}
+
 /* Toggle Switch */
 .wv-toggle {
   display: flex;
@@ -1849,8 +1862,6 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  ;
-  ;
   gap: var(--wv-space-2);
   padding: var(--wv-space-3) var(--wv-space-2);
   background: var(--wv-color-surface);
