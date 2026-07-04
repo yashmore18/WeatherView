@@ -7,6 +7,17 @@
  * apply, or an alert object { id, severity, icon, title, message }.
  */
 
+// "141 minutes" reads as noise - round to the nearest 5 minutes and render
+// as hours+minutes, dropping whichever unit is zero.
+function formatDuration(totalMinutes) {
+    const rounded = Math.max(5, Math.round(totalMinutes / 5) * 5);
+    const hours = Math.floor(rounded / 60);
+    const minutes = rounded % 60;
+    if (hours === 0) return `${minutes} minutes`;
+    if (minutes === 0) return `${hours} hour${hours === 1 ? '' : 's'}`;
+    return `${hours} hour${hours === 1 ? '' : 's'} ${minutes} minutes`;
+}
+
 function checkRainSoon(currentWeather, forecast) {
     const hourly = forecast?.hourly_forecast || [];
     if (hourly.length === 0) return null;
@@ -29,7 +40,7 @@ function checkRainSoon(currentWeather, forecast) {
         title: 'Rain likely soon',
         message: minutes <= 5
             ? 'Rain is likely in the next few minutes.'
-            : `Rain is likely in about ${minutes} minutes.`
+            : `Rain is likely in about ${formatDuration(minutes)}.`
     };
 }
 
@@ -49,8 +60,8 @@ function checkRainEnding(currentWeather, forecast) {
     const minutes = Math.max(0, Math.round((clearsAt.dt - nowTs) / 60));
     const message = minutes <= 30
         ? 'Rain should clear up within the hour.'
-        : minutes <= 90
-            ? `Rain should let up in about ${Math.round(minutes / 60 * 2) / 2} hours.`
+        : minutes <= 150
+            ? `Rain should let up in about ${formatDuration(minutes)}.`
             : `Rain is expected to continue for a few more hours, clearing around ${new Date(clearsAt.dt * 1000).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })}.`;
 
     return {
@@ -161,4 +172,4 @@ function computeAlerts(currentWeather, forecast, airQuality, prefs = {}, units =
     return alerts;
 }
 
-window.WVAlerts = { computeAlerts, checkRainSoon, checkRainEnding, checkAqiSpike, checkTempSwing, checkGoodWeather };
+window.WVAlerts = { computeAlerts, checkRainSoon, checkRainEnding, checkAqiSpike, checkTempSwing, checkGoodWeather, formatDuration };

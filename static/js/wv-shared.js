@@ -299,6 +299,15 @@ class WVShared {
                 });
             });
             const { latitude, longitude } = position.coords;
+            // Reset the loading flag before dispatching: page modules'
+            // 'wv:cityselected' listeners (e.g. today.js's handleCitySelected)
+            // bail out early whenever wv.isLoading is still true, to avoid
+            // overlapping fetches from rapid searches. dispatchEvent runs
+            // listeners synchronously, so if this flag were still true here
+            // (it's set at the top of this method), the listener would see
+            // isLoading=true and silently no-op - geolocation would resolve
+            // successfully but never actually fetch or render anything.
+            this.setLoading(false);
             document.dispatchEvent(new CustomEvent('wv:cityselected', {
                 detail: { lat: latitude, lon: longitude, isGeolocation: true }
             }));

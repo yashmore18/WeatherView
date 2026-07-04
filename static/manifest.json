@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "WeatherView",
   "short_name": "WeatherView",
   "description": "Get current weather and 5-day forecasts for any city with geolocation support",

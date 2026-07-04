@@ -63,33 +63,50 @@
                 </div>
                 
                 <div class="wv-hero-card__highlights">
-                    <div class="wv-highlight">
+                    <div class="wv-highlight" tabindex="0" role="button" aria-expanded="false" aria-controls="heroHumidityExtra">
                         <i class="fas fa-tint wv-highlight__icon" aria-hidden="true"></i>
                         <div class="wv-highlight__content">
                             <span class="wv-highlight__label">Humidity</span>
                             <strong id="heroHumidity" class="wv-highlight__value"></strong>
+                            <div class="wv-highlight__extra" id="heroHumidityExtra">
+                                <span>Dew point <strong id="heroDewPoint"></strong></span>
+                            </div>
                         </div>
+                        <i class="fas fa-chevron-down wv-highlight__chevron" aria-hidden="true"></i>
                     </div>
-                    <div class="wv-highlight">
+                    <div class="wv-highlight" tabindex="0" role="button" aria-expanded="false" aria-controls="heroWindExtra">
                         <i class="fas fa-wind wv-highlight__icon" aria-hidden="true"></i>
                         <div class="wv-highlight__content">
                             <span class="wv-highlight__label">Wind</span>
                             <strong id="heroWind" class="wv-highlight__value"></strong>
+                            <div class="wv-highlight__extra" id="heroWindExtra">
+                                <span>Gusts <strong id="heroWindGust"></strong></span>
+                                <span>Direction <strong id="heroWindDir"></strong></span>
+                            </div>
                         </div>
+                        <i class="fas fa-chevron-down wv-highlight__chevron" aria-hidden="true"></i>
                     </div>
-                    <div class="wv-highlight">
+                    <div class="wv-highlight" tabindex="0" role="button" aria-expanded="false" aria-controls="heroPressureExtra">
                         <i class="fas fa-compress-arrows-alt wv-highlight__icon" aria-hidden="true"></i>
                         <div class="wv-highlight__content">
                             <span class="wv-highlight__label">Pressure</span>
                             <strong id="heroPressure" class="wv-highlight__value"></strong>
+                            <div class="wv-highlight__extra" id="heroPressureExtra">
+                                <span>Sea level <strong id="heroSeaLevel"></strong></span>
+                            </div>
                         </div>
+                        <i class="fas fa-chevron-down wv-highlight__chevron" aria-hidden="true"></i>
                     </div>
-                    <div class="wv-highlight">
+                    <div class="wv-highlight" tabindex="0" role="button" aria-expanded="false" aria-controls="heroVisibilityExtra">
                         <i class="fas fa-eye wv-highlight__icon" aria-hidden="true"></i>
                         <div class="wv-highlight__content">
                             <span class="wv-highlight__label">Visibility</span>
                             <strong id="heroVisibility" class="wv-highlight__value"></strong>
+                            <div class="wv-highlight__extra" id="heroVisibilityExtra">
+                                <span>Cloud cover <strong id="heroCloudCover"></strong></span>
+                            </div>
                         </div>
+                        <i class="fas fa-chevron-down wv-highlight__chevron" aria-hidden="true"></i>
                     </div>
                 </div>
             </div>

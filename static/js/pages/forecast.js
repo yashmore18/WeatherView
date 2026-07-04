@@ -259,8 +259,14 @@ class ForecastPage {
 
         const styles = getComputedStyle(document.documentElement);
         const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-        const textColor = isDark ? '#ffffff' : '#666666';
-        const gridColor = isDark ? '#404040' : '#e0e0e0';
+        // The chart sits inside a glass-card on top of the animated sky, not a
+        // plain white/dark page background - at night the card's translucent
+        // scrim blends down to a mid-gray regardless of theme, so a mid-gray
+        // '#666666' label all but disappears into it. Use a color with enough
+        // contrast against that worst-case mid-gray backdrop, not just against
+        // an assumed flat page background.
+        const textColor = isDark ? '#ffffff' : '#171717';
+        const gridColor = isDark ? '#404040' : '#a3a3a3';
         // Chart.js/canvas can't resolve CSS custom properties, so these must
         // be read as computed values, not passed through as literal
         // 'var(--...)' strings (which canvas silently fails to render).
@@ -337,8 +343,8 @@ class ForecastPage {
     updateChartTheme(isDark) {
         if (!this.chart) return;
         const styles = getComputedStyle(document.documentElement);
-        const textColor = isDark ? '#ffffff' : '#666666';
-        const gridColor = isDark ? '#404040' : '#e0e0e0';
+        const textColor = isDark ? '#ffffff' : '#171717';
+        const gridColor = isDark ? '#404040' : '#a3a3a3';
         const accentColor = styles.getPropertyValue('--wv-color-accent').trim();
         const warningColor = styles.getPropertyValue('--wv-color-warning').trim();
 
