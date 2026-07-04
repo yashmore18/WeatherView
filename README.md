@@ -63,4 +63,6 @@ cp .env.example .env             # then fill in WEATHER_API_KEY
 - **Font Awesome**: Icon library
 
 ### Infrastructure
-- **In-memory Caching**: TTL-based caching system, no external cache/database
+- **SQLite-backed caching**: TTL-based, shared across gunicorn worker processes (see `services/cache.py`)
+- **Rate limiting & security headers**: flask-limiter, CSP, and standard security headers (see `app.py`)
+- See [docs/deployment.md](docs/deployment.md) for gunicorn/nginx production deployment

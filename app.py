@@ -6,6 +6,7 @@ import webbrowser
 import threading
 import logging
 from flask import Flask, render_template, jsonify, request, send_from_directory, g
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from services.weather_api import WeatherAPI
@@ -23,6 +24,13 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
 if app.secret_key == "dev-secret-key-change-in-production":
     logger.warning("SESSION_SECRET not set - using the insecure default dev key. Set SESSION_SECRET in production.")
+
+# Behind nginx (see deploy/nginx.conf), every request otherwise arrives from
+# 127.0.0.1 - without this, flask-limiter's per-IP rate limit would treat
+# every real visitor as the same single client. Only trust one hop's worth
+# of X-Forwarded-* (nginx itself), not an arbitrary chain a client could spoof.
+if os.environ.get('BEHIND_PROXY', 'false').lower() in ('1', 'true', 'yes'):
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 # Rate limiting: protects the single (paid/metered) OpenWeatherMap API key
 # behind this proxy from being exhausted by one abusive client, and bounds
