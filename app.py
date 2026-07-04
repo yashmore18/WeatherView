@@ -35,15 +35,20 @@ if os.environ.get('BEHIND_PROXY', 'false').lower() in ('1', 'true', 'yes'):
 # Rate limiting: protects the single (paid/metered) OpenWeatherMap API key
 # behind this proxy from being exhausted by one abusive client, and bounds
 # how much load any single IP can put on the app under the 100-concurrent-
-# user target. Default storage is per-process memory - with 3 gunicorn
-# workers (see gunicorn.conf.py) the effective ceiling per IP is up to 3x
-# a single worker's limit; swap LIMITER_STORAGE_URI to a shared backend
-# (e.g. redis://...) if perfectly-consistent cross-worker limits matter more
-# than keeping the deployment footprint small.
+# user target. Default storage is per-process memory, so each gunicorn
+# worker (see gunicorn.conf.py) counts independently - a single IP could
+# otherwise get roughly workers x limit before ANY one worker's count trips,
+# since requests are spread across them round-robin. Dividing the intended
+# ceiling by the worker count keeps the effective per-IP limit close to the
+# originally intended one without adding a shared backend. Swap
+# LIMITER_STORAGE_URI to a real shared store (e.g. redis://...) for exact
+# cross-worker accounting instead of this approximation.
+_workers = int(os.environ.get('GUNICORN_WORKERS', 3))
+_effective_limit = max(1, 120 // _workers)
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["120 per minute"],
+    default_limits=[f"{_effective_limit} per minute"],
     storage_uri=os.environ.get("LIMITER_STORAGE_URI", "memory://"),
 )
 
