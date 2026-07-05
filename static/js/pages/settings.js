@@ -63,6 +63,11 @@ class SettingsPage {
                     await Promise.all(registrations.map(r => r.unregister()));
                 }
             } finally {
+                // Set after sessionStorage.clear() above, so it survives into
+                // the next load and makes that load look like a genuine cold
+                // start (splash screen) instead of a plain reload - see the
+                // inline script in base.html that reads and consumes this.
+                sessionStorage.setItem('wv_forceSplash', 'true');
                 // Reload regardless of whether every cleanup step above
                 // succeeded - a partial clear plus a fresh load is still
                 // better than leaving the button in a disabled dead-end state.

@@ -53,8 +53,14 @@
         (function () {
             var el = document.getElementById('wvSplash');
             var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            // Set by Settings' "Clear cache & reset app" right before its
+            // reload, so that reload looks like a genuine cold start instead
+            // of a plain page refresh - consumed (removed) immediately so it
+            // never persists past this one load.
+            var forceSplash = sessionStorage.getItem('wv_forceSplash') === 'true';
+            if (forceSplash) sessionStorage.removeItem('wv_forceSplash');
             var alreadyShown = sessionStorage.getItem('wv_splashShown');
-            if (!isStandalone || alreadyShown) {
+            if (!(isStandalone || forceSplash) || (alreadyShown && !forceSplash)) {
                 el.style.display = 'none';
                 return;
             }
