@@ -796,6 +796,7 @@ class WVShared {
             <button class="wv-toast__close" aria-label="Dismiss error"><i class="fas fa-times" aria-hidden="true"></i></button>
         `;
         toast.querySelector('.wv-toast__close').addEventListener('click', () => this.removeToast(toast));
+        this.setupToastSwipe(toast);
         setTimeout(() => this.removeToast(toast), 5000);
         toastContainer.appendChild(toast);
         this.announceToScreenReader(`Error: ${message}`);
@@ -817,12 +818,54 @@ class WVShared {
             <button class="wv-toast__close" aria-label="Dismiss"><i class="fas fa-times" aria-hidden="true"></i></button>
         `;
         toast.querySelector('.wv-toast__close').addEventListener('click', () => this.removeToast(toast));
+        this.setupToastSwipe(toast);
         setTimeout(() => this.removeToast(toast), 3000);
         toastContainer.appendChild(toast);
     }
 
-    removeToast(toast) {
+    // Swipe a toast left/right past a threshold to dismiss it, same rule as
+    // the close button - just a touch-native shortcut for it (mirrors
+    // setupSwipeToDismiss() for alert banners in pages/today.js).
+    setupToastSwipe(toast) {
+        if (!('ontouchstart' in window)) return;
+
+        let startX = null;
+        let dx = 0;
+
+        toast.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            dx = 0;
+            toast.style.transition = 'none';
+        }, { passive: true });
+
+        toast.addEventListener('touchmove', (e) => {
+            if (startX === null) return;
+            dx = e.touches[0].clientX - startX;
+            toast.style.transform = `translateX(${dx}px)`;
+            toast.style.opacity = String(Math.max(0.15, 1 - Math.abs(dx) / 200));
+        }, { passive: true });
+
+        toast.addEventListener('touchend', () => {
+            if (startX === null) return;
+            toast.style.transition = 'transform 200ms ease, opacity 200ms ease';
+            if (Math.abs(dx) > 80) {
+                toast.style.transform = `translateX(${dx > 0 ? 500 : -500}px)`;
+                toast.style.opacity = '0';
+                setTimeout(() => this.removeToast(toast, true), 200);
+            } else {
+                toast.style.transform = '';
+                toast.style.opacity = '';
+            }
+            startX = null;
+        });
+    }
+
+    removeToast(toast, skipAnimation = false) {
         if (!toast.parentNode) return;
+        if (skipAnimation) {
+            toast.parentNode.removeChild(toast);
+            return;
+        }
         toast.classList.add('removing');
         toast.addEventListener('animationend', () => {
             if (toast.parentNode) toast.parentNode.removeChild(toast);

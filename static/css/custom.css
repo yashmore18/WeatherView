@@ -748,7 +748,7 @@ footer .text-muted {
 }
 
 .slide-up {
-  animation: slideUp var(--wv-transition-slow) var(--wv-easing);
+  animation: slideUp var(--wv-transition-slow);
 }
 
 @keyframes slideUp {
@@ -1619,7 +1619,7 @@ button.wv-nav-toggle {
   /* backwards so a staggered nth-of-type delay (further down this file)
      holds the element at the animation's start state instead of flashing
      it at full opacity/position for the delay's duration first. */
-  animation: fadeInUp var(--wv-transition-slow) var(--wv-easing) backwards;
+  animation: fadeInUp var(--wv-transition-slow) backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1670,7 +1670,7 @@ button.wv-nav-toggle {
 
 .wv-hero-card {
   position: relative;
-  animation: fadeInUp var(--wv-transition-slow) var(--wv-easing);
+  animation: fadeInUp var(--wv-transition-slow);
 }
 
 .wv-hero-card__inner {
@@ -2424,7 +2424,7 @@ button.wv-nav-toggle {
   border-radius: var(--wv-toast-radius);
   box-shadow: var(--wv-toast-shadow);
   pointer-events: auto;
-  animation: slideInRight var(--wv-transition-base) var(--wv-easing);
+  animation: slideInRight var(--wv-transition-base);
   max-width: 360px;
 }
 
@@ -2605,7 +2605,7 @@ button.wv-nav-toggle {
 }
 
 .wv-toast.removing {
-  animation: slideOutRight var(--wv-transition-base) var(--wv-easing) forwards;
+  animation: slideOutRight var(--wv-transition-base) forwards;
 }
 
 /* ========================================
@@ -3654,7 +3654,7 @@ body[data-page="map"] .wv-content {
 .wv-daily-list .wv-daily-item,
 .wv-comparison-grid .wv-comparison-card,
 .wv-popular-cities .wv-comparison-card {
-  animation: fadeInUp var(--wv-transition-slow) var(--wv-easing) backwards;
+  animation: fadeInUp var(--wv-transition-slow) backwards;
 }
 
 .wv-details-grid .wv-detail-card:nth-child(1) { animation-delay: 0ms; }
