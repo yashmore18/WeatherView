@@ -1,5 +1,5 @@
 // Service Worker for WeatherView PWA
-const CACHE_NAME = 'yash-weather-app-v13';
+const CACHE_NAME = 'yash-weather-app-v14';
 const STATIC_CACHE_URLS = [
   '/',
   '/forecast',

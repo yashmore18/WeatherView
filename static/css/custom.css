@@ -925,8 +925,14 @@ body {
 }
 
 /* Mobile nav hamburger + drawer backdrop (hidden on desktop; shown at the
-   same <=1024px breakpoint where .wv-sidebar becomes an off-canvas drawer) */
-.wv-nav-toggle {
+   same <=1024px breakpoint where .wv-sidebar becomes an off-canvas drawer).
+   Element-qualified selector (not just .wv-nav-toggle) is deliberate: this
+   and .wv-icon-btn's own `display: flex` are equal-specificity class rules,
+   and .wv-icon-btn is defined later in this file - without the extra
+   specificity bump here, source order let .wv-icon-btn's display win on
+   every screen size, so the hamburger silently never hid on desktop no
+   matter what width the media queries below were keyed to. */
+button.wv-nav-toggle {
   display: none;
 }
 
@@ -1273,6 +1279,13 @@ body {
 
 .wv-btn i {
   font-size: var(--wv-text-base);
+  /* Font Awesome's webfont glyphs inherit the page's line-height (not 1),
+     which gives the icon a taller line box than its actual glyph - flex's
+     align-items:center then centers that oversized box, not the visible
+     glyph, so the icon renders visibly above the button's text baseline.
+     Most noticeable on --sm buttons where the mismatch is a bigger
+     fraction of the button's total height (e.g. "Add a City"). */
+  line-height: 1;
 }
 
 /* Secondary Button (Glass) */
@@ -1402,7 +1415,7 @@ body {
     display: none;
   }
 
-  .wv-nav-toggle {
+  button.wv-nav-toggle {
     display: inline-flex;
   }
 
@@ -2136,7 +2149,13 @@ body {
   color: var(--wv-color-text-tertiary);
 }
 
-.wv-favorites-empty i {
+/* Direct-child combinator, not a descendant selector - this is meant for
+   the big star icon only, but as a plain descendant selector it was also
+   matching the "Add a City" button's own icon two levels down (a
+   fas fa-plus inside <button>), giving it an oversized margin-bottom and
+   0.5 opacity meant for the star. That's what made the plus icon look
+   misaligned/washed-out and inconsistent with the button's text. */
+.wv-favorites-empty > i {
   font-size: var(--wv-text-4xl);
   margin-bottom: var(--wv-space-4);
   opacity: 0.5;

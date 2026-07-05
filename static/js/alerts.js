@@ -62,18 +62,30 @@ function checkRainSoon(currentWeather, forecast) {
     if (/^(09|10|11)/.test(currentWeather?.icon || '')) return null;
 
     const nowTs = Date.now() / 1000;
-    const soon = hourly.find(h => h.dt >= nowTs && h.dt <= nowTs + 3 * 3600 && (h.pop || 0) >= 0.5);
-    if (!soon) return null;
+    const upcoming = hourly.filter(h => h.dt >= nowTs);
+    const soonIndex = upcoming.findIndex(h => h.dt <= nowTs + 3 * 3600 && (h.pop || 0) >= 0.5);
+    if (soonIndex === -1) return null;
+    const soon = upcoming[soonIndex];
+
+    // Confidence isn't a fixed label - it's read off how much of the
+    // available forecast signal actually agrees. A lone bucket over
+    // threshold with calmer buckets on either side is a much shakier call
+    // than several consecutive buckets all pointing the same way, so the
+    // wording says "possible"/"looks like" instead of a flatly confident
+    // "likely" when the data itself doesn't back that certainty.
+    const nextAgrees = upcoming[soonIndex + 1] ? (upcoming[soonIndex + 1].pop || 0) >= 0.5 : false;
+    const confident = nextAgrees;
 
     const minutes = Math.max(0, Math.round((soon.dt - nowTs) / 60));
+    const verb = confident ? 'likely' : 'possible';
     return {
         id: 'rain-soon',
         severity: 'info',
         icon: 'fa-cloud-rain',
-        title: 'Rain likely soon',
+        title: confident ? 'Rain likely soon' : 'Rain possible soon',
         message: minutes <= 5
-            ? 'Rain is likely in the next few minutes.'
-            : `Rain is likely in about ${formatDuration(minutes)}.`
+            ? `Rain is ${verb} in the next few minutes.`
+            : `Rain is ${verb} in about ${formatDuration(minutes)}.`
     };
 }
 
@@ -87,9 +99,41 @@ function checkRainEnding(currentWeather, forecast) {
 
     const nowTs = Date.now() / 1000;
     const upcoming = hourly.filter(h => h.dt >= nowTs);
-    const clearsAt = upcoming.find(h => (h.pop || 0) < 0.5);
-    if (!clearsAt) return null;
 
+    // A single 3-hourly bucket dipping under 50% amid days of otherwise
+    // continuous heavy rain is forecast noise, not a real end to the rain
+    // event - confidently naming a "clearing" time from that one shaky
+    // bucket is actively misleading (this is exactly what produced "rain
+    // clearing Friday 2pm" during a multi-day monsoon spell that never
+    // actually let up within the forecast window). Requiring 3 consecutive
+    // buckets (9 hours) under the threshold confirms a real, sustained
+    // break - 2 wasn't strict enough, since the dip that caused the bad
+    // report above happened to be the *last two* buckets in the entire
+    // 5-day window, "confirmed" only by there being no more data left to
+    // contradict it, not by an actual multi-bucket lull.
+    let clearsAtIndex = -1;
+    for (let i = 0; i < upcoming.length - 2; i++) {
+        if ((upcoming[i].pop || 0) < 0.5 && (upcoming[i + 1].pop || 0) < 0.5 && (upcoming[i + 2].pop || 0) < 0.5) {
+            clearsAtIndex = i;
+            break;
+        }
+    }
+
+    if (clearsAtIndex === -1) {
+        // No sustained break found anywhere in the forecast window - rain
+        // is expected to persist beyond what the data can currently show,
+        // which is itself useful to say plainly instead of pointing at an
+        // unreliable single-bucket dip near the edge of the window.
+        return {
+            id: 'rain-ending',
+            severity: 'warning',
+            icon: 'fa-cloud-showers-heavy',
+            title: 'Rain continuing',
+            message: `No sustained break in the rain is showing up in the ${Math.round(hourly.length * 3 / 24)}-day forecast yet - check back as it updates.`
+        };
+    }
+
+    const clearsAt = upcoming[clearsAtIndex];
     const minutes = Math.max(0, Math.round((clearsAt.dt - nowTs) / 60));
     const message = minutes <= 30
         ? 'Rain should clear up within the hour.'
