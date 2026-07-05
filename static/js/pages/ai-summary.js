@@ -136,6 +136,18 @@ class AiSummaryPage {
             localStorage.setItem('wv_aiPrefsPrompted', 'true');
             prompt.style.display = 'none';
             this.refresh();
+            // Immediate, concrete confirmation that the answer actually did
+            // something - the "Personalized:" line further down the summary
+            // says the same thing, but that's easy to miss right after
+            // clicking, and a shifted threshold that never flips the
+            // comfort word on a given day would otherwise look like a no-op.
+            if (sensitivity === 'heat') {
+                this.wv.showSuccess("Got it - we'll call warm days uncomfortable a bit sooner for you.");
+            } else if (sensitivity === 'cold') {
+                this.wv.showSuccess("Got it - we'll call cool days uncomfortable a bit sooner for you.");
+            } else {
+                this.wv.showSuccess('Got it - using the default comfort thresholds.');
+            }
         };
         prompt.querySelectorAll('[data-sensitivity]').forEach(btn => {
             btn.addEventListener('click', () => save(btn.dataset.sensitivity), { once: true });

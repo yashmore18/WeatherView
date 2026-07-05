@@ -4255,14 +4255,32 @@ body[data-page="map"] .wv-content {
   margin: 0;
   color: var(--wv-color-text-secondary);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--wv-space-2);
+}
+
+.wv-ai-summary__prefs-question i {
+  margin-top: 3px;
 }
 
 .wv-ai-summary__prefs-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--wv-space-2);
+}
+
+/* .wv-btn--sm's fixed 32px height (fine for short single-line labels
+   elsewhere) clips these buttons' longer labels ("I get hot easily") once
+   they wrap to two lines on narrower widths - let height grow with content
+   instead, same padding front/back either way. */
+.wv-ai-summary__prefs-actions .wv-btn {
+  height: auto;
+  min-height: var(--wv-btn-height-sm);
+  padding-top: var(--wv-space-1);
+  padding-bottom: var(--wv-space-1);
+  white-space: normal;
+  text-align: center;
+  line-height: 1.3;
 }
 
 .wv-ai-summary__stats {

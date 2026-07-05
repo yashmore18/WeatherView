@@ -1,8 +1,9 @@
 {
-  "version": "v3.0.1",
+  "version": "v3.0.2",
   "notes": [
+    "Fixed cramped/unstyled buttons on the AI Summary personalization prompt",
+    "Answering that prompt now shows a confirmation and a concrete effect",
     "Fixed the installed app showing an unverified/unsafe warning on Android",
-    "Clearer AI Summary personalization question, with the effect explained",
     "Added a legend and units to the AI Summary temperature chart"
   ]
 }

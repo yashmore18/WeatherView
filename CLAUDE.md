@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 WeatherView is a Flask web app: current weather, real hourly + 7-day forecasts, an algorithm-generated AI Summary page, an interactive weather map, rule-based smart alerts, real Web Push notifications, geolocation, autocomplete location search, air quality, and full PWA offline support. Backend is Python/Flask; frontend is server-rendered Jinja2 + vanilla JS (no build step, no frontend framework, no database).
 
-**Current version: v3.0.1** (v3.0.0 was tagged "Final release"; v3.0.1 is a follow-up fix round — see `CHANGELOG.md` for full history). Live demo: https://weatherview-sol5.onrender.com. Repo: `git@github.com:yashmore18/WeatherView.git` (origin), default branch `main`.
+**Current version: v3.0.2** (v3.0.0 was tagged "Final release"; v3.0.1 is a follow-up fix round — see `CHANGELOG.md` for full history). Live demo: https://weatherview-sol5.onrender.com. Repo: `git@github.com:yashmore18/WeatherView.git` (origin), default branch `main`.
 
 It's a multi-page app now, not a single-page one — see Architecture below. If you're recalling an older mental model of this repo (single `templates/index.html`, one `static/js/app.js`), that's stale; re-derive from the file list, not from memory.
 
@@ -89,7 +89,7 @@ This app has no frontend test suite, so any UI-affecting change (JS, CSS, templa
 
 **Smart alerts** (`static/js/alerts.js`): rule-based, computed client-side from data already fetched — rain starting soon/ending (confidence-weighted against multiple consecutive forecast buckets, not a single 3-hourly point), AQI spikes, frost/temperature swings, "great weather" callouts. Individually toggleable in Settings (`wv_alertPrefs` in localStorage).
 
-**PWA**: `manifest.json` + `static/sw.js` provide offline shell caching, an install prompt, and Web Push handling. `CACHE_NAME` in `sw.js` (currently `yash-weather-app-v22`) **must be bumped whenever any file in `STATIC_CACHE_URLS` changes**, or an installed PWA keeps serving stale cached assets. The splash screen (`#wvSplash` in `base.html`) normally shows only on a standalone-PWA cold launch (once per session, via `sessionStorage.wv_splashShown`); Settings' "Clear cache & reset app" additionally sets a one-shot `sessionStorage.wv_forceSplash` flag right after clearing storage so that reload also shows it, mimicking a genuine fresh start rather than a plain reload — the inline script in `base.html` reads and immediately consumes that flag. **`static/manifest.json` must be served as `Content-Type: application/manifest+json`** (forced explicitly in `app.py`'s `_set_security_headers`, since Flask's static handler otherwise guesses `application/json` by extension) — Chrome/Android's WebAPK minting requires the correct MIME type, and without it an installed PWA falls back to a bare Chrome-wrapped shortcut that Android/Play Protect flags as an unverified/unsafe app (fixed in v3.0.1).
+**PWA**: `manifest.json` + `static/sw.js` provide offline shell caching, an install prompt, and Web Push handling. `CACHE_NAME` in `sw.js` (currently `yash-weather-app-v23`) **must be bumped whenever any file in `STATIC_CACHE_URLS` changes**, or an installed PWA keeps serving stale cached assets. The splash screen (`#wvSplash` in `base.html`) normally shows only on a standalone-PWA cold launch (once per session, via `sessionStorage.wv_splashShown`); Settings' "Clear cache & reset app" additionally sets a one-shot `sessionStorage.wv_forceSplash` flag right after clearing storage so that reload also shows it, mimicking a genuine fresh start rather than a plain reload — the inline script in `base.html` reads and immediately consumes that flag. **`static/manifest.json` must be served as `Content-Type: application/manifest+json`** (forced explicitly in `app.py`'s `_set_security_headers`, since Flask's static handler otherwise guesses `application/json` by extension) — Chrome/Android's WebAPK minting requires the correct MIME type, and without it an installed PWA falls back to a bare Chrome-wrapped shortcut that Android/Play Protect flags as an unverified/unsafe app (fixed in v3.0.1).
 
 **First-launch flow** (chained, so a brand-new visit never shows more than one modal at once): onboarding/marketing intro (`#onboardingModal`, `wv_onboardingDismissed`) → name prompt (`#nameModal`, `wv_nameModalDismissed`, sets `wv_userName`) → permissions prompt (`#permissionsModal`, `wv_permissionsPromptDismissed`, skips itself if geolocation + notification permissions are both already browser-decided). All wired in `WVShared.init()` in `wv-shared.js` — `setupOnboarding()` → `setupNameModal()` → `maybeShowPermissionsPrompt()`.
 
@@ -105,7 +105,7 @@ git tag -a vX.Y.Z -m "..."
 git push origin main
 git push origin vX.Y.Z
 ```
-Existing tags: `v1.0.0`, `v2.0.0`, `v3.0.0`, `v3.0.1` (`git tag -l -n1` to see summaries). Don't push without the user's go-ahead if it wasn't already explicitly requested for this round of changes.
+Existing tags: `v1.0.0`, `v2.0.0`, `v3.0.0`, `v3.0.1`, `v3.0.2` (`git tag -l -n1` to see summaries). Don't push without the user's go-ahead if it wasn't already explicitly requested for this round of changes.
 
 ## Design Direction
 

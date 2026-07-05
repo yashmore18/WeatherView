@@ -2,6 +2,24 @@
 
 Notable changes to WeatherView, newest first.
 
+## v3.0.2
+
+- Fixed the AI Summary personalization prompt's "Skip" button looking
+  unstyled/unpadded next to the other three (it used a bare ghost style
+  while every other skip/dismiss button in the app - the name and
+  permissions prompts - uses the same visible secondary pill); also fixed
+  the other three buttons clipping their own label once it wrapped to two
+  lines on narrower screens (a fixed button height meant for short
+  single-line labels).
+- The personalization answer previously had no visible effect - the
+  comfort-threshold shift it applies is only a few degrees, so it often
+  didn't change the headline's comfort word for a given day, making the
+  prompt feel like a no-op. Now shows an immediate confirmation toast after
+  answering, and the summary itself states the exact adjusted threshold
+  ("we're calling it uncomfortable above 22°C today for you, instead of
+  the usual 25°C") whenever a preference is active, tied to that day's
+  real numbers.
+
 ## v3.0.1
 
 - Fixed the installed PWA showing an "unverified/unsafe app" warning after

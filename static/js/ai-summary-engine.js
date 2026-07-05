@@ -51,6 +51,22 @@ function buildParagraphs(current, forecast, airQuality, alerts, units, prefs = {
     const tempUnit = units === 'imperial' ? '°F' : '°C';
     const paragraphs = [];
 
+    // Make the personalization prompt's effect visible every time it
+    // actually applies, tied to today's real numbers - otherwise there's no
+    // way to tell the stored preference is doing anything at all, since it
+    // only ever nudges a threshold a few degrees and often won't flip the
+    // comfort word itself for any given day.
+    if (prefs.sensitivity === 'heat' || prefs.sensitivity === 'cold') {
+        const shift = units === 'imperial' ? 5 : 3;
+        const baseMax = units === 'imperial' ? 77 : 25;
+        const baseMin = units === 'imperial' ? 60 : 16;
+        if (prefs.sensitivity === 'heat') {
+            paragraphs.push(`Personalized: since you said you get hot easily, we're calling it uncomfortable above ${baseMax - shift}${tempUnit} today for you, instead of the usual ${baseMax}${tempUnit}.`);
+        } else {
+            paragraphs.push(`Personalized: since you said you get cold easily, we're calling it uncomfortable below ${baseMin + shift}${tempUnit} today for you, instead of the usual ${baseMin}${tempUnit}.`);
+        }
+    }
+
     // Comfort breakdown - the "why" behind the headline's adjective.
     const parts = [];
     if (current.humidity >= 70) parts.push(`humidity is high at ${current.humidity}%`);
