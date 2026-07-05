@@ -47,6 +47,34 @@ class WVShared {
         this.setupLocationButton();
         this.initAlertsBadge();
         this.setupInstallPrompt();
+        this.autoGeolocateIfPermitted();
+    }
+
+    // Previously the user had to click "My Location" every single visit,
+    // even with location access already granted - this checks the
+    // Permissions API and silently re-fetches the current position instead,
+    // so a returning user with location on just sees it update on its own.
+    // Resolves asynchronously (geolocation is never instant), which is fine:
+    // every page module registers its 'wv:cityselected' listener
+    // synchronously during its own constructor, all of which run before
+    // this can possibly resolve.
+    async autoGeolocateIfPermitted() {
+        // Never override an explicit choice already in play (a ?city=/
+        // ?lat=&lon= URL param, or a previously-searched city) - silently
+        // jumping to the device's current position would be surprising if
+        // the user came here to check a specific place.
+        if (this.getResolvedCity()) return;
+        if (!navigator.permissions || !navigator.geolocation) return;
+        try {
+            const status = await navigator.permissions.query({ name: 'geolocation' });
+            if (status.state === 'granted') {
+                this.getLocationWeather();
+            }
+        } catch (error) {
+            // Permissions API doesn't support querying 'geolocation' in
+            // every browser (notably Safari) - nothing to auto-trigger
+            // there, the manual "My Location" button still works.
+        }
     }
 
     // ---- PWA install prompt ----
@@ -330,8 +358,20 @@ class WVShared {
             this.setLoading(true);
             const position = await new Promise((resolve, reject) => {
                 navigator.geolocation.getCurrentPosition(resolve, reject, {
-                    timeout: 10000,
-                    enableHighAccuracy: true
+                    // enableHighAccuracy forces a GPS fix - laptops/desktops
+                    // with no GPS chip fall back to slow (or failing)
+                    // OS-level positioning, which is exactly what was
+                    // throwing the timeout error. A weather app only needs
+                    // city-level accuracy, which network/Wi-Fi-based
+                    // positioning gives almost instantly, so there's no
+                    // reason to demand GPS precision here at all.
+                    timeout: 15000,
+                    enableHighAccuracy: false,
+                    // Accept a fix up to 5 minutes old instead of always
+                    // forcing a brand new one - most browsers/OSes already
+                    // cache a recent position, so this turns "wait for a
+                    // fresh fix every single time" into "usually instant".
+                    maximumAge: 5 * 60 * 1000
                 });
             });
             const { latitude, longitude } = position.coords;

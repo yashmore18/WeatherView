@@ -2327,6 +2327,15 @@ body {
   height: var(--wv-btn-height-sm);
   padding: 0 var(--wv-btn-padding-x-sm);
   font-size: var(--wv-text-xs);
+  gap: var(--wv-space-1);
+}
+
+/* .wv-btn i always renders at --wv-text-base (16px) regardless of button
+   size - on this 32px-tall variant that made the icon look oversized next
+   to its own 12px label, most noticeably on the "Add a City" empty-state
+   button. */
+.wv-btn--sm i {
+  font-size: var(--wv-text-xs);
 }
 
 .wv-btn--lg {
