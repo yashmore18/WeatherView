@@ -5,6 +5,7 @@ import secrets
 import webbrowser
 import threading
 import logging
+import requests
 from flask import Flask, render_template, jsonify, request, send_from_directory, g, abort
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_limiter import Limiter
@@ -134,17 +135,17 @@ def _set_security_headers(response):
     # Ignored over plain HTTP, harmless to always set; matters once deployed
     # behind HTTPS (see nginx/deployment config).
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    # Font Awesome, Chart.js, Leaflet, and Inter are all self-hosted under
-    # static/vendor/ (no external CDN dependency for app chrome/interaction) -
-    # the only remaining external origin is CartoDB's basemap tile servers,
-    # which can't be self-hosted since they serve dynamically-generated
-    # per-zoom/per-coordinate map imagery.
+    # Font Awesome, Chart.js, Leaflet, and Inter are self-hosted under
+    # static/vendor/, and both the weather-overlay and basemap map tiles are
+    # proxied through our own /api/map/* routes - no page ever needs to load
+    # an image directly from a third-party origin, so img-src doesn't need
+    # any external host.
     response.headers['Content-Security-Policy'] = (
         f"default-src 'self'; "
         f"script-src 'self' 'nonce-{_get_csp_nonce()}'; "
         f"style-src 'self' 'unsafe-inline'; "
         f"font-src 'self'; "
-        f"img-src 'self' data: https://*.basemaps.cartocdn.com; "
+        f"img-src 'self' data:; "
         f"connect-src 'self'; "
         f"object-src 'none'; "
         f"base-uri 'self'; "
@@ -354,6 +355,53 @@ def map_tile(layer, z, x, y):
         except ValueError as e:
             logger.warning(f"Map tile error: {str(e)}")
             return jsonify({'error': str(e)}), 502
+        tile_cache.set(cache_key, (tile_bytes, content_type))
+
+    response = app.response_class(tile_bytes, mimetype=content_type)
+    response.headers['Cache-Control'] = 'public, max-age=600'
+    return response
+
+ALLOWED_BASEMAP_STYLES = {'World_Light_Gray_Base', 'World_Dark_Gray_Base'}
+# Pooled session for the same reason weather_api.py has one - the basemap
+# proxy can fire a couple dozen requests per initial map load/pan/zoom.
+_basemap_session = requests.Session()
+_basemap_adapter = requests.adapters.HTTPAdapter(pool_connections=20, pool_maxsize=20)
+_basemap_session.mount('https://', _basemap_adapter)
+
+@app.route('/api/map/basemap/<style>/<int:z>/<int:x>/<int:y>')
+def basemap_tile(style, z, x, y):
+    """Proxy Esri's keyless ArcGIS Online basemap tiles server-side.
+
+    Browsers loading these tiles directly from server.arcgisonline.com were
+    unreliable in production (some clients see the whole layer fail to load,
+    independent of anything wrong with the tile data itself - the same class
+    of problem the OpenWeatherMap overlay tiles above avoid by never being
+    fetched directly by the browser). Routing through our own domain, same
+    as the overlay tiles, removes that as a variable entirely.
+    """
+    if style not in ALLOWED_BASEMAP_STYLES:
+        return jsonify({'error': 'Unknown basemap style'}), 400
+    # This basemap's own tiles only go up to z16 (see maxNativeZoom in
+    # map.js) - reject anything Leaflet shouldn't be requesting at all.
+    if not (0 <= z <= 16) or not (0 <= x < 2 ** z) or not (0 <= y < 2 ** z):
+        return jsonify({'error': 'Tile coordinates out of range'}), 400
+
+    cache_key = f"basemap:{style}:{z}:{x}:{y}"
+    cached = tile_cache.get(cache_key)
+    if cached:
+        tile_bytes, content_type = cached
+    else:
+        try:
+            upstream = _basemap_session.get(
+                f"https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/{style}/MapServer/tile/{z}/{y}/{x}",
+                timeout=10,
+            )
+            upstream.raise_for_status()
+        except requests.RequestException as e:
+            logger.warning(f"Basemap tile fetch failed: {str(e)}")
+            return jsonify({'error': 'Basemap tile unavailable'}), 502
+        tile_bytes = upstream.content
+        content_type = upstream.headers.get('Content-Type', 'image/png')
         tile_cache.set(cache_key, (tile_bytes, content_type))
 
     response = app.response_class(tile_bytes, mimetype=content_type)

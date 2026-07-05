@@ -77,11 +77,22 @@ class MapPage {
     }
 
     setBasemap(isDark) {
+        // Routed through our own /api/map/basemap proxy (same reasoning as
+        // the weather overlay tiles below) rather than pointing the browser
+        // straight at server.arcgisonline.com - direct third-party tile
+        // requests turned out to be unreliable for some clients, and a
+        // server-side fetch from our own backend sidesteps that entirely.
+        // Esri's "Canvas" styles give the muted, near-monochrome basemap
+        // needed so colored weather overlays stay legible on top of it.
         if (this.baseLayer) this.map.removeLayer(this.baseLayer);
-        const style = isDark ? 'dark_all' : 'light_all';
-        this.baseLayer = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`, {
-            attribution: '&copy; OpenStreetMap contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
+        const style = isDark ? 'World_Dark_Gray_Base' : 'World_Light_Gray_Base';
+        this.baseLayer = L.tileLayer(`/api/map/basemap/${style}/{z}/{x}/{y}`, {
+            attribution: '&copy; <a href="https://www.esri.com">Esri</a>',
+            // This basemap's own tiles stop at z16 - maxNativeZoom lets the
+            // map (and the OpenWeatherMap overlays, which go to 19) keep
+            // zooming past that by upscaling the last available basemap tile
+            // instead of the layer just disappearing above z16.
+            maxNativeZoom: 16,
             maxZoom: 19
         });
         this.baseLayer.addTo(this.map);

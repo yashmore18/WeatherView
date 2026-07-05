@@ -1453,7 +1453,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--wv-space-4);
-  animation: fadeInUp var(--wv-transition-slow) var(--wv-easing);
+  /* backwards so a staggered nth-of-type delay (further down this file)
+     holds the element at the animation's start state instead of flashing
+     it at full opacity/position for the delay's duration first. */
+  animation: fadeInUp var(--wv-transition-slow) var(--wv-easing) backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3141,10 +3144,17 @@ body[data-page="map"] .wv-content {
  * 27. TODAY PAGE - HIGHLIGHTS WIDGETS
  * ======================================== */
 
-/* Staggered reveal for grid/scroll children so the Today page fills in
-   card-by-card rather than popping in as one flat block. */
+/* Staggered reveal for grid/scroll children so pages fill in card-by-card
+   rather than popping in as one flat block - covers every repeated card
+   pattern site-wide (Today's highlights/quicklinks, Forecast's daily list,
+   Locations' comparison grid, the Today empty-state's popular cities). */
 .wv-details-grid .wv-detail-card,
-.wv-hourly-scroll .wv-hourly-item {
+.wv-hourly-scroll .wv-hourly-item,
+.wv-hero-card__highlights .wv-highlight,
+.wv-quicklinks .wv-quicklink-card,
+.wv-daily-list .wv-daily-item,
+.wv-comparison-grid .wv-comparison-card,
+.wv-popular-cities .wv-comparison-card {
   animation: fadeInUp var(--wv-transition-slow) var(--wv-easing) backwards;
 }
 
@@ -3160,12 +3170,49 @@ body[data-page="map"] .wv-content {
 .wv-hourly-scroll .wv-hourly-item:nth-child(4) { animation-delay: 120ms; }
 .wv-hourly-scroll .wv-hourly-item:nth-child(n+5) { animation-delay: 160ms; }
 
+.wv-hero-card__highlights .wv-highlight:nth-child(1) { animation-delay: 0ms; }
+.wv-hero-card__highlights .wv-highlight:nth-child(2) { animation-delay: 60ms; }
+.wv-hero-card__highlights .wv-highlight:nth-child(3) { animation-delay: 120ms; }
+.wv-hero-card__highlights .wv-highlight:nth-child(4) { animation-delay: 180ms; }
+
+.wv-quicklinks .wv-quicklink-card:nth-child(1) { animation-delay: 0ms; }
+.wv-quicklinks .wv-quicklink-card:nth-child(2) { animation-delay: 70ms; }
+
+.wv-daily-list .wv-daily-item:nth-child(1) { animation-delay: 0ms; }
+.wv-daily-list .wv-daily-item:nth-child(2) { animation-delay: 30ms; }
+.wv-daily-list .wv-daily-item:nth-child(3) { animation-delay: 60ms; }
+.wv-daily-list .wv-daily-item:nth-child(4) { animation-delay: 90ms; }
+.wv-daily-list .wv-daily-item:nth-child(n+5) { animation-delay: 120ms; }
+
+.wv-comparison-grid .wv-comparison-card:nth-child(1),
+.wv-popular-cities .wv-comparison-card:nth-child(1) { animation-delay: 0ms; }
+.wv-comparison-grid .wv-comparison-card:nth-child(2),
+.wv-popular-cities .wv-comparison-card:nth-child(2) { animation-delay: 60ms; }
+.wv-comparison-grid .wv-comparison-card:nth-child(3),
+.wv-popular-cities .wv-comparison-card:nth-child(3) { animation-delay: 120ms; }
+.wv-comparison-grid .wv-comparison-card:nth-child(n+4),
+.wv-popular-cities .wv-comparison-card:nth-child(n+4) { animation-delay: 180ms; }
+
 @media (prefers-reduced-motion: reduce) {
   .wv-details-grid .wv-detail-card,
-  .wv-hourly-scroll .wv-hourly-item {
+  .wv-hourly-scroll .wv-hourly-item,
+  .wv-hero-card__highlights .wv-highlight,
+  .wv-quicklinks .wv-quicklink-card,
+  .wv-daily-list .wv-daily-item,
+  .wv-comparison-grid .wv-comparison-card,
+  .wv-popular-cities .wv-comparison-card {
     animation: none;
   }
 }
+
+/* Sections on the same page (e.g. Settings' Units/Theme/Alerts cards, or
+   Today's hero/hourly/highlights/quicklinks) each already fade+rise in via
+   .wv-section's own animation - staggering by position turns what was
+   simultaneous motion into a single cascading reveal down the page. */
+.wv-page > .wv-section:nth-of-type(1) { animation-delay: 0ms; }
+.wv-page > .wv-section:nth-of-type(2) { animation-delay: 80ms; }
+.wv-page > .wv-section:nth-of-type(3) { animation-delay: 160ms; }
+.wv-page > .wv-section:nth-of-type(n+4) { animation-delay: 220ms; }
 
 /* Wind compass */
 .wv-wind-card__body {
