@@ -2,6 +2,42 @@
 
 Notable changes to WeatherView, newest first.
 
+## v2.0.0
+
+- **New AI Summary page** (right after Today in the nav) - synthesizes
+  current conditions, forecast trend, air quality, and active alerts into
+  one narrative with a confidence badge and a temperature chart, revealed
+  as a staggered fade-in with a soft glow. Our own algorithm over live
+  data, explicitly labeled as such - not a third-party AI/LLM call.
+- **Real push notifications** - Web Push (VAPID) for abrupt weather
+  changes (rain starting/stopping, thunderstorms, sharp temperature
+  swings), triggered by a token-gated endpoint meant to be hit by the same
+  external keep-alive scheduler already used for `/healthz`, since a
+  free-tier host has no persistent worker to poll on its own schedule.
+- **Real hourly forecast** - linear interpolation between OpenWeatherMap's
+  3-hourly buckets to show one entry per hour, honestly flagged (a small
+  dot + legend) wherever a reading is estimated rather than real.
+- **"What's new" toast after a background update** - a PWA update used to
+  reload silently; now the fresh page shows a toast summarizing what
+  changed, sourced from `static/release-notes.json`.
+- Fixed alerts/notifications being nearly invisible against a dark or
+  cloudy animated sky scene (was a ~10%-opacity color wash meant for a flat
+  page background; now uses the same opaque glass scrim every other card
+  uses for contrast, plus a solid colored accent border).
+- Footer's About section is now Settings-only on mobile web and installed
+  PWA (was shown under every page's content, competing with the tab bar
+  for the same screen space).
+- Reworked the two-location compare tool's summary into a genuinely
+  holistic comparison (overall verdict with reasoning, condition-level
+  comparison, per-city callouts) instead of a flat list of stat deltas.
+- Extended hover feedback to the compare/insight cards, tab bar, and
+  settings toggles, which previously had none.
+- Fixed the desktop/tablet sidebar hamburger doing nothing (a CSS
+  specificity bug let an unrelated rule silently win at every screen
+  width) and the "Add a City" button's icon rendering off-center and
+  half-transparent (a descendant selector meant for a different icon was
+  unintentionally also matching this one).
+
 ## v1.0.0 - First tagged release
 
 - Added a one-time, skippable name prompt that personalizes the Today page

@@ -46,6 +46,41 @@ limiting.
 - Response headers should include `Content-Security-Policy`,
   `Strict-Transport-Security`, etc. (`curl -I`) - unaffected by any of this.
 
+## Push notifications: a second scheduled ping
+
+Push notifications (`services/push_service.py`) need something to
+periodically check subscribed locations for abrupt weather changes and
+send a push when one's found - there's no persistent worker process to
+host that on a free-tier dyno, so it piggybacks on the same external
+scheduler as the keep-alive ping above.
+
+### One-time setup
+
+1. **Set stable VAPID keys and a check token before deploying** (see the
+   main README's Environment Variables table) - `VAPID_PUBLIC_KEY`,
+   `VAPID_PRIVATE_KEY`, and `PUSH_CHECK_TOKEN`. If you skip this, the app
+   auto-generates them on first run, but they live on local disk - a
+   redeploy on an ephemeral filesystem regenerates them, silently
+   invalidating every existing push subscription and leaving the check
+   endpoint's token unknown to you.
+2. On the same scheduler (cron-job.org / UptimeRobot) used for `/healthz`,
+   add a second monitor hitting:
+   ```
+   https://<your-render-app>.onrender.com/api/push/check?token=<PUSH_CHECK_TOKEN>
+   ```
+   every 10-15 minutes. This is the request that actually detects changes
+   and sends pushes - without it, users can still opt in from Settings, but
+   nothing will ever be sent.
+
+### Why this is safe
+
+- The endpoint 404s for any request without the correct `token` - it isn't
+  discoverable or triggerable by unrelated traffic.
+- Each check is one OpenWeatherMap call per active subscription (already
+  cheap and cached everywhere else in the app) - this is the one endpoint
+  that intentionally isn't cache-first, since it needs the *current* state
+  to compare against, not a 10-minute-stale reading.
+
 ## Reference: Docker / a plain VM, if you revisit hosting later
 
 The repo also ships a `Dockerfile` and `deploy/nginx.conf` in case a
@@ -81,6 +116,17 @@ if the platform sets one.
 disk. Losing it on a restart/redeploy is fine - it's a TTL cache, not
 durable storage. The next request for each city just refetches from
 OpenWeatherMap once.
+
+`services/push_service.py`'s subscription store (`instance/push.sqlite3`)
+and auto-generated VAPID keys/check token are a different story - **losing
+those is not harmless**. Every existing push subscription becomes silently
+unusable (the old keys no longer match), and everyone who opted in has to
+re-enable it. Set `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`PUSH_CHECK_TOKEN`
+as real environment variables in production so they survive a redeploy -
+the subscriptions table itself is still lost on redeploy either way (it's
+local SQLite, not a managed database), but at least existing users
+resubscribing works normally instead of failing silently against
+regenerated keys.
 
 ## Local development
 

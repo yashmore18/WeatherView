@@ -1,12 +1,13 @@
 # WeatherView
 
-**v1.0.0**
+**v2.0.0**
 
 A fast, mobile-first weather app for any city in the world - current
-conditions, 5-day/hourly forecasts with plain-language insights, air
-quality, an interactive weather map, and rule-based smart alerts (rain
-starting/ending, frost, air quality spikes). Installable as a PWA, works
-offline, and never sends your location or API key anywhere it shouldn't.
+conditions, real hourly + 7-day forecasts, an algorithm-generated AI
+Summary page, an interactive weather map, rule-based smart alerts, and
+real push notifications for abrupt weather changes. Installable as a PWA,
+works offline, and never sends your location or API key anywhere it
+shouldn't.
 
 **Live demo:** [weatherview-sol5.onrender.com](https://weatherview-sol5.onrender.com)
 
@@ -37,13 +38,30 @@ offline, and never sends your location or API key anywhere it shouldn't.
 ### Weather data
 - Current conditions: temperature, feels-like, humidity, wind (speed/gust/
   direction), pressure, visibility, sunrise/sunset, cloud cover
-- Hourly + 7-day forecast, with an interactive Chart.js temperature/
-  feels-like chart
+- **Real hourly forecast** - OpenWeatherMap's free tier only returns
+  3-hourly buckets; every in-between hour is linearly interpolated
+  (temp/feels-like/pop/wind) and honestly flagged as estimated (a small dot
+  + legend) versus the real readings either side of it, instead of just
+  showing "5 PM, 8 PM, 11 PM..." with real gaps
+- 7-day forecast with an interactive Chart.js temperature/feels-like chart
 - **Forecast insights** - a plain-language summary ("best day this week",
   "pack an umbrella Wednesday", warming/cooling trend, dry-spell detection)
   computed from the same data instead of leaving you to read every row
 - Air quality index with a description and a visual scale
 - Dedicated detail pages for humidity/wind/pressure/visibility
+
+### AI Summary
+A dedicated page (right after Today in the nav) that reads the same
+current/forecast/air-quality/alert data every other page already has and
+synthesizes it into one narrative: a comfort-aware headline, the forecast
+trend, an air quality callout, active alerts, and a closing recommendation
+- plus a confidence badge and a temperature-trend chart. Revealed as a
+staggered fade-in with a soft glow, not dumped in all at once. Despite the
+name, it's our own rule-based algorithm over live data
+(`static/js/ai-summary-engine.js`) - explicitly labeled
+"Algorithm-generated" on the page itself, not a third-party AI/LLM call, so
+there's no new API dependency, no added cost, and no data leaving the
+server that wasn't already being fetched.
 
 ### Smart alerts
 Rule-based, computed client-side from data already fetched (no extra API
@@ -58,6 +76,18 @@ possible" depends on whether neighboring forecast buckets agree, and
 "clearing" is only ever named from at least 3 consecutive buckets showing
 a real break - a lone dip in an otherwise continuous multi-day rain event
 no longer gets reported as "rain stopping" at some barely-plausible time.
+
+### Push notifications
+Real Web Push (VAPID + a service worker), not just an in-app toast - opt in
+from Settings and get notified even when the app is closed, for genuinely
+abrupt changes only: rain starting or stopping, a thunderstorm arriving, or
+a sharp temperature swing. Not routine updates, which would make the
+feature worthless within a day. Since there's no persistent server process
+on a free-tier host to poll on a schedule, detection piggybacks on the same
+external keep-alive-ping pattern already used for `/healthz` (see
+[Deployment](#deployment)) - `services/push_service.py` compares fresh
+weather against each subscription's last-seen snapshot whenever that ping
+arrives, and only sends a push when something real changed.
 
 ### Location
 - City search with debounced autocomplete
@@ -93,6 +123,10 @@ your browser never talks to a third party directly.
   searched from)
 - Installable PWA with offline shell caching and a install prompt that
   snoozes for 2 days if dismissed, and never nags again once installed
+- Updates in the background like any PWA - but tells you about it, with a
+  toast summarizing what changed right after the update takes effect,
+  instead of silently reloading with no explanation
+- Every card, toggle, and nav item reacts on hover, not just buttons
 - Skeleton loading states, toasts, and accessible (WCAG-conscious) markup
   throughout
 
@@ -100,8 +134,10 @@ your browser never talks to a third party directly.
 
 **Backend** - Flask, a thin `services/weather_api.py` client that maps
 OpenWeatherMap's raw JSON to a stable internal contract, a SQLite-backed
-`Cache` (`services/cache.py`, shared across gunicorn workers) and matching
-`RateLimiter` (`services/rate_limiter.py`).
+`Cache` (`services/cache.py`, shared across gunicorn workers), a matching
+`RateLimiter` (`services/rate_limiter.py`), and `services/push_service.py`
+(VAPID key management + subscription storage + abrupt-change detection for
+Web Push, via `pywebpush`).
 
 **Frontend** - No build step, no framework. `static/js/wv-shared.js` is the
 shared app shell (search, units, dark mode, favorites, geolocation, PWA
@@ -153,11 +189,18 @@ can't resolve the `from services...` imports.
 | `RATE_LIMIT_TILES` | No | Per-IP requests/minute for map tile endpoints (default 600) |
 | `BEHIND_PROXY` | No | Set `true` if deploying behind nginx/a reverse proxy that isn't auto-detected (Render is auto-detected) |
 | `FLASK_DEBUG` | No | Defaults to `true` for `main.py`'s dev server; set `false` in any environment where Werkzeug's debugger shouldn't be reachable |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | No | Identify this server to push services - auto-generated and persisted under `instance/` if unset, but **set both for any real deployment**: on a host with an ephemeral filesystem (e.g. Render's free tier), losing these on redeploy silently invalidates every existing push subscription. Generate once by running the app locally (it auto-generates on first run), then copy `public_key`/`private_key` out of `instance/vapid_keys.json` into these two env vars |
+| `VAPID_CONTACT_EMAIL` | No | Contact email push services may use to reach you about your server (`mailto:` prefix added automatically if missing) |
+| `PUSH_CHECK_TOKEN` | No | Shared secret for `/api/push/check` (see [Deployment](#deployment)) - same auto-generate-and-persist caveat as the VAPID keys |
 
 ## Deployment
 
 See [docs/deployment.md](docs/deployment.md) for the recommended setup
-(Render + a keep-alive ping) and the reasoning behind it.
+(Render + a keep-alive ping) and the reasoning behind it. If you want push
+notifications, add a second monitor on the same scheduler hitting
+`/api/push/check?token=<PUSH_CHECK_TOKEN>` every 10-15 minutes - that's
+what actually checks for abrupt weather changes and sends the pushes, in
+lieu of a persistent background worker.
 
 ## Contributing
 
@@ -171,6 +214,56 @@ report a vulnerability.
 ## License
 
 [MIT](LICENSE) - see the LICENSE file for the full text.
+
+## How WeatherView compares
+
+An honest self-assessment against Apple Weather, Google Weather, AccuWeather,
+and The Weather Channel - not a sales pitch.
+
+**Where WeatherView genuinely does better:**
+- **Privacy** - no account, no ad SDKs, no analytics/tracking scripts of any
+  kind. Every big commercial weather app either sells ad inventory or is a
+  data-collection arm of a larger platform; WeatherView has nothing to sell
+  and nothing to collect. This is the one place a small, transparent, open-
+  source app can credibly out-do a corporate one, and it's not close.
+- **Transparency** - every algorithm (rain-confidence scoring, the AI
+  Summary, forecast insights) is plain, readable JavaScript you can open
+  and audit right now, not a black-box model. When WeatherView says
+  "medium confidence," you can go read exactly what that means.
+- **No third-party origins** - every asset (fonts, icons, charts, map
+  tiles) is self-hosted or proxied server-side. The big apps all pull from
+  multiple CDNs and ad/analytics domains; this one's CSP allows exactly
+  one origin: itself.
+
+**Where the big players still legitimately win:**
+- **Forecast model quality.** Apple Weather (via WeatherKit/Dark Sky's
+  legacy tech) and AccuWeather run proprietary hyperlocal nowcasting
+  (minute-by-minute precipitation) and their own numerical weather models.
+  WeatherView is a thin client over OpenWeatherMap's free tier - the
+  *presentation* is arguably more transparent, but the underlying forecast
+  accuracy is only as good as what OpenWeatherMap's free API provides, and
+  hourly data beyond the real 3-hourly points is an honest interpolation,
+  not a model output.
+- **Severe weather integration.** The big apps plug directly into
+  government weather services (NWS in the US, etc.) for legally-official
+  severe weather warnings. WeatherView's alerts are self-computed from
+  forecast data and are deliberately *not* a substitute for an official
+  severe weather warning system.
+- **Radar animation.** Apple/Google/AccuWeather all offer an animated,
+  scrubbable precipitation radar loop; WeatherView's map shows a live
+  snapshot per layer, not an animated timeline.
+- **Scale and infrastructure.** Those apps run on dedicated global
+  infrastructure with no rate limits a normal user would ever hit. This is
+  one Flask app on a free-tier host with a metered upstream API key - it's
+  built to handle that honestly (caching, rate limiting, a keep-alive
+  ping), but it's not built for millions of concurrent users.
+
+**Net assessment:** for what it's built to be - a fast, private,
+transparent, installable weather app for checking conditions and getting
+genuinely meaningful alerts - it holds its own and wins clearly on privacy
+and transparency. It is not, and doesn't claim to be, a replacement for a
+professional meteorological product's forecast model or official severe-
+weather warning pipeline.
 
 ## About
 

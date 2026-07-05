@@ -1,9 +1,11 @@
 # Security
 
-WeatherView has no user accounts, no stored personal data, and no
-state-changing endpoints - every route is a read-only `GET`. That keeps the
-attack surface small, but the app still follows standard hardening practice
-for anything exposed on the public internet.
+WeatherView has no user accounts and no stored personal data. Almost every
+route is a read-only `GET`; the only exceptions are the push-notification
+subscribe/unsubscribe endpoints (see below), which write nothing more
+sensitive than a browser-generated push subscription and a city name. That
+keeps the attack surface small, but the app still follows standard
+hardening practice for anything exposed on the public internet.
 
 ## What's in place
 
@@ -41,6 +43,18 @@ the metered API.
 only in `WEATHER_API_KEY` (an environment variable, never committed, loaded
 via `.env` + `python-dotenv`) and is only ever used server-side; the browser
 never sees it, including for map tiles (proxied) and geocoding (proxied).
+The VAPID *private* key (push notifications) follows the same rule - only
+the public key is ever sent to the browser.
+
+**Push notification endpoints** - `/api/push/subscribe` and
+`/api/push/unsubscribe` are the app's only mutating routes, gated only by
+possessing a valid browser-issued push subscription object (the same trust
+model any Web Push integration uses; there's no user data behind them worth
+protecting further). `/api/push/check` - the endpoint that actually
+triggers sends - is gated by a separate shared-secret token
+(`PUSH_CHECK_TOKEN`) so it can't be triggered by traffic that merely
+discovers the URL; a request without the correct token gets a plain 404
+rather than a 403, so the endpoint's existence isn't confirmed either way.
 
 **No injection surface found** - a manual audit (XSS payloads in every
 user-controlled query parameter, path traversal against `/static/` and the
