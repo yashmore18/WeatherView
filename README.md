@@ -1,5 +1,7 @@
 # WeatherView
 
+**v1.0.0**
+
 A fast, mobile-first weather app for any city in the world - current
 conditions, 5-day/hourly forecasts with plain-language insights, air
 quality, an interactive weather map, and rule-based smart alerts (rain
@@ -50,6 +52,13 @@ time, not your browser's), air quality spikes, frost/temperature-swing
 warnings, and "great day to be outside" callouts. Each is individually
 toggleable in Settings.
 
+Both rain alerts are confidence-weighted against the forecast itself rather
+than trusting a single 3-hourly data point: "rain likely" vs. "rain
+possible" depends on whether neighboring forecast buckets agree, and
+"clearing" is only ever named from at least 3 consecutive buckets showing
+a real break - a lone dip in an otherwise continuous multi-day rain event
+no longer gets reported as "rain stopping" at some barely-plausible time.
+
 ### Location
 - City search with debounced autocomplete
 - **Geolocation** that actually works on desktop - network-based
@@ -58,8 +67,11 @@ toggleable in Settings.
 - Reverse-geocoded state/region info, so same-named towns in different
   places are distinguishable
 - Up to 5 favorite cities, and a **two-location compare tool** with
-  autocomplete and a written analysis (temperature/humidity/wind/air-quality
-  deltas), not just a side-by-side stat dump
+  autocomplete (picking a suggestion compares by exact coordinates, so
+  same-named towns in different states/countries never get mixed up) and a
+  holistic written analysis - an overall "which is more pleasant right now,
+  and why" verdict, a condition-level comparison (rain vs. clear, etc.), and
+  per-city callouts, not just a flat list of independent stat deltas
 
 ### Map
 Interactive weather map (Leaflet) with precipitation/clouds/temperature/wind
@@ -69,6 +81,9 @@ layer. Both the weather overlays and the basemap are proxied server-side -
 your browser never talks to a third party directly.
 
 ### Experience
+- A one-time, skippable name prompt personalizes the Today page with a
+  time-of-day greeting ("Good afternoon, Yash") - stored in `localStorage`
+  only, editable/clearable anytime from Settings, nothing sent to a server
 - Dark/light mode with automatic system-preference detection
 - Fully responsive: desktop sidebar, tablet off-canvas drawer, phone bottom
   tab bar - three genuinely different navigation patterns, not one shrunk

@@ -1,8 +1,33 @@
 # Changelog
 
-Notable changes to WeatherView, newest first. This project doesn't cut
-formal releases/tags, so entries are grouped by theme rather than a strict
-version number.
+Notable changes to WeatherView, newest first.
+
+## v1.0.0 - First tagged release
+
+- Added a one-time, skippable name prompt that personalizes the Today page
+  with a time-of-day greeting; editable/clearable anytime from a new
+  Profile section in Settings.
+- Fixed the desktop/tablet sidebar hamburger doing nothing: an equal-
+  specificity CSS rule defined later in the stylesheet was silently always
+  winning regardless of screen width, so the toggle never actually hid or
+  showed the sidebar as intended.
+- Root-caused a real report of the rain-ending alert naming an implausible
+  clearing time ("Friday 2pm" during ongoing Sunday rain) - a single
+  isolated forecast bucket dipping under the rain threshold, right at the
+  edge of the 5-day window, was being read as a genuine break in a
+  continuous multi-day rain event. Both rain alerts now require multiple
+  consecutive forecast buckets to agree before naming a specific outcome,
+  and word their confidence ("likely" vs. "possible") based on how much of
+  the forecast actually supports it, rather than trusting a single 3-hourly
+  data point in isolation.
+- Fixed the "Add a City" button's icon rendering off-center and half-
+  transparent - a descendant CSS selector meant only for a different,
+  unrelated icon was unintentionally also matching this button's icon two
+  DOM levels down.
+- Reworked the two-location compare tool's summary from a flat list of
+  independent stat deltas into a genuinely holistic comparison: an overall
+  comfort-based verdict with reasoning, a condition-level comparison, and
+  per-city feels-like callouts.
 
 ## Security hardening & final polish
 
