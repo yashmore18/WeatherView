@@ -145,7 +145,13 @@ class ForecastPage {
     displayHourlyForecast(data) {
         const hourlyScroll = document.getElementById('hourlyScroll');
         const tempUnit = this.wv.currentUnits === 'imperial' ? '°F' : '°C';
-        const hourlyData = data.hourly_forecast?.slice(0, 24) || [];
+        const windUnit = this.wv.currentUnits === 'imperial' ? 'mph' : 'm/s';
+        // OpenWeatherMap's free forecast is only 3-hourly - interpolating
+        // first (window.WVHourly, static/js/hourly-interpolate.js) gives one
+        // entry per hour instead of "5 PM, 8 PM, 11 PM..." with real gaps,
+        // then slice to a full 24 real hours' worth.
+        const rawPoints = data.hourly_forecast?.slice(0, 9) || [];
+        const hourlyData = window.WVHourly ? window.WVHourly.interpolateHourly(rawPoints) : rawPoints;
 
         if (hourlyData.length === 0) {
             hourlyScroll.innerHTML = '<p class="wv-empty-text" style="padding: var(--wv-space-4); color: var(--wv-color-text-tertiary);">No hourly data available</p>';
@@ -156,12 +162,15 @@ class ForecastPage {
             const date = new Date(hour.dt * 1000);
             const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
             const precip = hour.pop ? Math.round(hour.pop * 100) : 0;
+            const feelsDiff = Math.abs(Math.round(hour.feels_like) - Math.round(hour.temp));
             return `
-                <div class="wv-hourly-item" role="listitem">
+                <div class="wv-hourly-item${hour.estimated ? ' wv-hourly-item--estimated' : ''}" role="listitem">
                     <span class="wv-hourly-item__time">${timeStr}</span>
                     <i class="wv-hourly-item__icon fas ${this.wv.getWeatherIconClass(hour.icon)}" aria-hidden="true"></i>
                     <span class="wv-hourly-item__temp">${Math.round(hour.temp)}${tempUnit}</span>
+                    ${feelsDiff >= 2 ? `<span class="wv-hourly-item__feels">Feels ${Math.round(hour.feels_like)}${tempUnit}</span>` : ''}
                     ${precip > 0 ? `<span class="wv-hourly-item__precip"><i class="fas fa-tint" aria-hidden="true"></i>${precip}%</span>` : ''}
+                    ${hour.wind_speed ? `<span class="wv-hourly-item__wind"><i class="fas fa-wind" aria-hidden="true"></i>${Math.round(hour.wind_speed)} ${windUnit}</span>` : ''}
                 </div>
             `;
         }).join('');

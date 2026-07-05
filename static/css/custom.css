@@ -1483,14 +1483,21 @@ button.wv-nav-toggle {
     display: none !important;
   }
 
-  /* Previously hidden entirely on phones (attribution text competed with
-     the tab bar for the same screen strip) - now that the footer carries a
-     real About section and GitHub link, not just a one-line credit, it's
-     worth keeping on a mobile-first app. It's normal-flow content sitting
-     right before the *fixed* tab bar though, so it needs the same bottom
-     clearance .wv-content already gets, or its last ~64px would scroll up
-     permanently behind the bar with no way to reach it. */
+  /* On phone widths the footer's About section is only worth the screen
+     real estate on Settings, where there's nothing else competing for
+     space - showing it under the Today/Forecast/Map/Locations content too
+     just pushes the tab bar further away from the actual weather data on
+     the page someone actually opened the app for. */
   .wv-footer {
+    display: none;
+  }
+
+  body[data-page="settings"] .wv-footer {
+    display: block;
+    /* Normal-flow content sitting right before the *fixed* tab bar needs
+       the same bottom clearance .wv-content already gets, or its last
+       ~64px would scroll up permanently behind the bar with no way to
+       reach it. */
     padding-bottom: calc(var(--wv-space-6) + 64px + env(safe-area-inset-bottom, 0px));
   }
 
@@ -1499,6 +1506,21 @@ button.wv-nav-toggle {
      wider touch screens like tablets. */
   .wv-pull-refresh {
     top: calc(env(safe-area-inset-top, 0px) + 178px);
+  }
+}
+
+/* Same Settings-only reasoning as the phone-width rule above, but keyed to
+   actually running as the installed app (display-mode: standalone) instead
+   of screen width - covers a desktop-installed PWA window too, which can
+   be full desktop width but should behave like the app, not like a
+   regular browser tab browsing the site. */
+@media (display-mode: standalone) {
+  .wv-footer {
+    display: none;
+  }
+
+  body[data-page="settings"] .wv-footer {
+    display: block;
   }
 }
 
@@ -1822,6 +1844,23 @@ button.wv-nav-toggle {
   border-radius: var(--wv-radius-full);
 }
 
+.wv-hourly-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--wv-space-2);
+  margin: var(--wv-space-2) 0 0;
+  color: var(--wv-color-text-tertiary);
+  font-size: var(--wv-text-xs);
+}
+
+.wv-hourly-legend__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--wv-radius-full);
+  background: var(--wv-color-text-tertiary);
+  opacity: 0.5;
+}
+
 .wv-hourly-item {
   flex: 0 0 auto;
   width: 80px;
@@ -1872,6 +1911,40 @@ button.wv-nav-toggle {
 
 .wv-hourly-item__precip i {
   font-size: var(--wv-text-xs);
+}
+
+.wv-hourly-item__wind {
+  font-size: var(--wv-text-xs);
+  color: var(--wv-color-text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.wv-hourly-item__feels {
+  font-size: var(--wv-text-xs);
+  color: var(--wv-color-text-tertiary);
+}
+
+/* OpenWeatherMap's free forecast is only 3-hourly - hours in between real
+   data points are a straight-line estimate, not a real reading. A small
+   dot (rather than hiding the distinction entirely) keeps the hourly strip
+   honest about which numbers are real without cluttering every single
+   card with a text label. */
+.wv-hourly-item--estimated {
+  position: relative;
+}
+
+.wv-hourly-item--estimated::after {
+  content: '';
+  position: absolute;
+  top: var(--wv-space-2);
+  right: var(--wv-space-2);
+  width: 5px;
+  height: 5px;
+  border-radius: var(--wv-radius-full);
+  background: var(--wv-color-text-tertiary);
+  opacity: 0.5;
 }
 
 /* ========================================
@@ -2798,26 +2871,41 @@ button.wv-nav-toggle {
   margin-bottom: var(--wv-space-6);
 }
 
+/* Previously a ~10%-opacity color wash meant to sit on a flat page
+   background - against this app's animated sky scene (which can itself be
+   a dark, saturated navy/cloudy gradient), that gave almost no contrast
+   and the alert visually disappeared into the scene. Using the same
+   opaque glass scrim + blur + elevated shadow every other card uses for
+   separation from the scene, plus a solid colored left-border accent (not
+   just a thin 1px outline) for the severity color, keeps alerts legible
+   regardless of what's behind them. */
 .wv-alert-banner {
   display: flex;
   align-items: flex-start;
   gap: var(--wv-space-3);
   padding: var(--wv-toast-padding);
   border-radius: var(--wv-toast-radius);
-  box-shadow: var(--wv-shadow-sm);
-  border: 1px solid var(--wv-color-info-border);
-  background: var(--wv-color-info-bg);
+  box-shadow: var(--wv-shadow-card-elevated);
+  border: 1px solid var(--wv-glass-border-light);
+  border-left: 4px solid var(--wv-color-info);
+  background: var(--wv-glass-text-scrim-light);
+  backdrop-filter: blur(var(--wv-glass-blur)) saturate(var(--wv-glass-saturate));
+  -webkit-backdrop-filter: blur(var(--wv-glass-blur)) saturate(var(--wv-glass-saturate));
   color: var(--wv-color-text-primary);
 }
 
+[data-bs-theme="dark"] .wv-alert-banner {
+  border-color: var(--wv-glass-border-dark);
+  border-left-color: var(--wv-color-info);
+  background: var(--wv-glass-text-scrim-dark);
+}
+
 .wv-alert-banner--warning {
-  border-color: var(--wv-color-warning-border);
-  background: var(--wv-color-warning-bg);
+  border-left-color: var(--wv-color-warning);
 }
 
 .wv-alert-banner--error {
-  border-color: var(--wv-color-error-border);
-  background: var(--wv-color-error-bg);
+  border-left-color: var(--wv-color-error);
 }
 
 .wv-alert-banner__icon {

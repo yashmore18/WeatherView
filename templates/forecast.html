@@ -38,6 +38,10 @@
         <div class="wv-hourly-scroll" id="hourlyScroll" role="list" aria-label="Hourly forecast items">
             <!-- Hourly items populated by JS -->
         </div>
+        <p class="wv-hourly-legend">
+            <span class="wv-hourly-legend__dot" aria-hidden="true"></span>
+            Estimated between OpenWeatherMap's 3-hourly readings
+        </p>
     </section>
 
     <!-- Daily Forecast Section -->
@@ -114,5 +118,6 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/forecast-insights.js') }}"></script>
+<script src="{{ url_for('static', filename='js/hourly-interpolate.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pages/forecast.js') }}"></script>
 {% endblock %}
