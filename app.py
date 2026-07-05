@@ -134,12 +134,17 @@ def _set_security_headers(response):
     # Ignored over plain HTTP, harmless to always set; matters once deployed
     # behind HTTPS (see nginx/deployment config).
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    # Font Awesome, Chart.js, Leaflet, and Inter are all self-hosted under
+    # static/vendor/ (no external CDN dependency for app chrome/interaction) -
+    # the only remaining external origin is CartoDB's basemap tile servers,
+    # which can't be self-hosted since they serve dynamically-generated
+    # per-zoom/per-coordinate map imagery.
     response.headers['Content-Security-Policy'] = (
         f"default-src 'self'; "
-        f"script-src 'self' 'nonce-{_get_csp_nonce()}' https://cdn.jsdelivr.net https://unpkg.com; "
-        f"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com; "
-        f"font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
-        f"img-src 'self' data: https://*.basemaps.cartocdn.com https://unpkg.com; "
+        f"script-src 'self' 'nonce-{_get_csp_nonce()}'; "
+        f"style-src 'self' 'unsafe-inline'; "
+        f"font-src 'self'; "
+        f"img-src 'self' data: https://*.basemaps.cartocdn.com; "
         f"connect-src 'self'; "
         f"object-src 'none'; "
         f"base-uri 'self'; "

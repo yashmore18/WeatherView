@@ -1,5 +1,5 @@
 // Service Worker for WeatherView PWA
-const CACHE_NAME = 'yash-weather-app-v5';
+const CACHE_NAME = 'yash-weather-app-v6';
 const STATIC_CACHE_URLS = [
   '/',
   '/forecast',
@@ -22,9 +22,22 @@ const STATIC_CACHE_URLS = [
   '/static/icons/apple-touch-icon-180.png',
   '/static/icons/favicon-32.png',
   '/static/icons/favicon-16.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://cdn.jsdelivr.net/npm/chart.js'
-  // Leaflet + OpenStreetMap/OpenWeatherMap tiles are deliberately not
+  // Font Awesome, Chart.js, Leaflet, and Inter are all self-hosted now (no
+  // external CDN dependency) - precache them alongside the rest of the shell.
+  '/static/vendor/fontawesome/css/all.min.css',
+  '/static/vendor/fontawesome/webfonts/fa-solid-900.woff2',
+  '/static/vendor/fontawesome/webfonts/fa-regular-400.woff2',
+  '/static/vendor/fontawesome/webfonts/fa-brands-400.woff2',
+  '/static/vendor/chartjs/chart.umd.min.js',
+  '/static/vendor/fonts/inter.css',
+  '/static/vendor/fonts/inter-latin.woff2',
+  '/static/vendor/fonts/inter-latin-ext.woff2',
+  '/static/vendor/leaflet/leaflet.css',
+  '/static/vendor/leaflet/leaflet.js',
+  '/static/vendor/leaflet/images/marker-icon.png',
+  '/static/vendor/leaflet/images/marker-icon-2x.png',
+  '/static/vendor/leaflet/images/marker-shadow.png'
+  // CartoDB basemap tiles + OpenWeatherMap overlay tiles are deliberately not
   // precached here - the map page degrades gracefully offline (blank
   // tiles), and the tile key space is far too large to precache.
 ];
