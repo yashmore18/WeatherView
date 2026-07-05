@@ -4,6 +4,16 @@
 
 {% block content %}
 <div class="wv-page">
+    <!-- Insights Section -->
+    <section id="insightsSection" class="wv-section" style="display: none;" aria-labelledby="insightsTitle">
+        <header class="wv-section__header">
+            <h2 id="insightsTitle" class="wv-section__title">This Week at a Glance</h2>
+        </header>
+        <div class="wv-insights-grid" id="insightsGrid" role="list" aria-label="Forecast insights">
+            <!-- Insight cards populated by JS -->
+        </div>
+    </section>
+
     <!-- Hourly Forecast Section -->
     <section id="hourlySection" class="wv-section" style="display: none;" aria-labelledby="hourlyTitle">
         <header class="wv-section__header">
@@ -103,5 +113,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/forecast-insights.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pages/forecast.js') }}"></script>
 {% endblock %}

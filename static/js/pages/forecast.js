@@ -57,6 +57,7 @@ class ForecastPage {
             if (this.wv.scene) this.wv.scene.applyWeatherIcon(currentData.icon);
             this.hasData = true;
             this.showSections();
+            this.displayInsights(forecastData);
             this.displayHourlyForecast(forecastData);
             this.displayDailyForecast(forecastData);
             this.displayDetails(currentData);
@@ -84,10 +85,32 @@ class ForecastPage {
     showSections() {
         const emptyState = document.getElementById('forecastEmptyState');
         if (emptyState) emptyState.style.display = 'none';
-        ['hourlySection', 'dailySection', 'detailsSection', 'chartSection'].forEach(id => {
+        ['insightsSection', 'hourlySection', 'dailySection', 'detailsSection', 'chartSection'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'block';
         });
+    }
+
+    displayInsights(data) {
+        const section = document.getElementById('insightsSection');
+        const grid = document.getElementById('insightsGrid');
+        if (!grid || !window.WVForecastInsights) return;
+
+        const insights = window.WVForecastInsights.computeInsights(data.daily_forecast, this.wv.currentUnits);
+        if (insights.length === 0) {
+            if (section) section.style.display = 'none';
+            return;
+        }
+
+        grid.innerHTML = insights.map(insight => `
+            <article class="wv-insight-card glass-card" role="listitem">
+                <div class="wv-insight-card__icon" aria-hidden="true"><i class="fas ${insight.icon}"></i></div>
+                <div class="wv-insight-card__body">
+                    <h3 class="wv-insight-card__title">${this.wv.escapeHtml(insight.title)}</h3>
+                    <p class="wv-insight-card__message">${this.wv.escapeHtml(insight.message)}</p>
+                </div>
+            </article>
+        `).join('');
     }
 
     setSkeletonsVisible(loading) {

@@ -3505,3 +3505,54 @@ body[data-page="map"] .wv-content {
   }
 }
 
+/* ========================================
+ * 37. FORECAST INSIGHTS
+ * ======================================== */
+
+.wv-insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--wv-space-4);
+}
+
+.wv-insight-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wv-space-4);
+  padding: var(--wv-space-5);
+}
+
+.wv-insight-card__icon {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--wv-radius-lg);
+  background: var(--wv-color-accent-soft, rgba(59, 130, 246, 0.12));
+  color: var(--wv-color-accent);
+  font-size: 1.1rem;
+}
+
+.wv-insight-card__title {
+  margin: 0 0 var(--wv-space-1);
+  font-size: var(--wv-font-size-md);
+  font-weight: 600;
+}
+
+.wv-insight-card__message {
+  margin: 0;
+  color: var(--wv-color-text-secondary);
+  font-size: var(--wv-font-size-sm);
+  line-height: 1.5;
+}
+
+.wv-insights-grid .wv-insight-card {
+  animation: fadeInUp 0.5s ease-out backwards;
+}
+
+.wv-insights-grid .wv-insight-card:nth-child(1) { animation-delay: 0ms; }
+.wv-insights-grid .wv-insight-card:nth-child(2) { animation-delay: 60ms; }
+.wv-insights-grid .wv-insight-card:nth-child(3) { animation-delay: 120ms; }
+

@@ -143,6 +143,11 @@ class MapPage {
     }
 
     async handleCitySelected(detail) {
+        // International/cold-start lookups can take several seconds - without
+        // this, the map just sits at its previous view with no feedback,
+        // which reads as "broken" rather than "still loading".
+        const loadingEl = document.getElementById('mapLoading');
+        if (loadingEl) loadingEl.classList.add('is-active');
         try {
             const params = detail.city
                 ? { city: detail.city, units: this.wv.currentUnits }
@@ -153,6 +158,8 @@ class MapPage {
             this.centerOn(data.lat, data.lon, data.city);
         } catch (error) {
             this.wv.showError(error.message);
+        } finally {
+            if (loadingEl) loadingEl.classList.remove('is-active');
         }
     }
 
