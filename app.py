@@ -8,10 +8,10 @@ import logging
 import requests
 from flask import Flask, render_template, jsonify, request, send_from_directory, g, abort
 from werkzeug.middleware.proxy_fix import ProxyFix
-from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from services.weather_api import WeatherAPI
 from services.cache import Cache
+from services.rate_limiter import RateLimiter
 
 
 # Configure logging
@@ -42,22 +42,31 @@ if _behind_proxy:
 # Rate limiting: protects the single (paid/metered) OpenWeatherMap API key
 # behind this proxy from being exhausted by one abusive client, and bounds
 # how much load any single IP can put on the app under the 100-concurrent-
-# user target. Default storage is per-process memory, so each gunicorn
-# worker (see gunicorn.conf.py) counts independently - a single IP could
-# otherwise get roughly workers x limit before ANY one worker's count trips,
-# since requests are spread across them round-robin. Dividing the intended
-# ceiling by the worker count keeps the effective per-IP limit close to the
-# originally intended one without adding a shared backend. Swap
-# LIMITER_STORAGE_URI to a real shared store (e.g. redis://...) for exact
-# cross-worker accounting instead of this approximation.
-_workers = int(os.environ.get('GUNICORN_WORKERS', 3))
-_effective_limit = max(1, 120 // _workers)
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=[f"{_effective_limit} per minute"],
-    storage_uri=os.environ.get("LIMITER_STORAGE_URI", "memory://"),
-)
+# user target. Backed by a shared SQLite counter (services/rate_limiter.py,
+# same file-sharing pattern as Cache) rather than flask-limiter's default
+# per-process memory storage - each gunicorn worker used to count
+# independently, so a single IP could get roughly workers x limit through
+# before ANY one worker's own count tripped, since requests round-robin
+# across them. A shared counter enforces the real, intended ceiling
+# regardless of which worker happens to handle each request.
+rate_limiter = RateLimiter()
+_DEFAULT_RATE_LIMIT = int(os.environ.get('RATE_LIMIT_DEFAULT', 120))  # per minute, per IP
+_TILE_RATE_LIMIT = int(os.environ.get('RATE_LIMIT_TILES', 600))  # per minute, per IP - map tiles fire dozens per pan/zoom
+# Static assets and the service worker never touch OpenWeatherMap - rate
+# limiting them protects nothing and would instead punish a normal user's
+# single pageload (which alone requests 15-20 static files).
+_RATE_LIMIT_EXEMPT_ENDPOINTS = {'healthz', 'static', 'service_worker'}
+_ENDPOINT_RATE_LIMITS = {'map_tile': _TILE_RATE_LIMIT, 'basemap_tile': _TILE_RATE_LIMIT}
+
+
+@app.before_request
+def _enforce_rate_limit():
+    if request.endpoint in _RATE_LIMIT_EXEMPT_ENDPOINTS or request.endpoint is None:
+        return None
+    limit = _ENDPOINT_RATE_LIMITS.get(request.endpoint, _DEFAULT_RATE_LIMIT)
+    identifier = get_remote_address()
+    if not rate_limiter.allow(identifier, limit, window_seconds=60):
+        return jsonify({'error': 'Rate limit exceeded, please try again later'}), 429
 
 # Initialize services
 weather_api = WeatherAPI()
@@ -156,7 +165,6 @@ def _set_security_headers(response):
 
 
 @app.route('/healthz')
-@limiter.exempt
 def healthz():
     """Liveness check for the hosting platform (e.g. Koyeb) - deliberately
     doesn't touch the cache or OpenWeatherMap, just confirms the process is
@@ -333,8 +341,8 @@ ALLOWED_MAP_LAYERS = {'precipitation_new', 'clouds_new', 'temp_new', 'wind_new'}
 # the 4 weather layers, times however many tiles are visible) - the global
 # default limit is sized for normal API calls, not this, and blocking tiles
 # with 429s just makes the map look broken. Tiles are cheap (cached
-# server-side, bounded upstream cost), so they get their own generous ceiling.
-@limiter.limit("600 per minute")
+# server-side, bounded upstream cost), so they get their own generous ceiling
+# (see _ENDPOINT_RATE_LIMITS above).
 def map_tile(layer, z, x, y):
     """Proxy OpenWeatherMap tile requests so the API key stays server-side."""
     if layer not in ALLOWED_MAP_LAYERS:
@@ -383,7 +391,6 @@ _basemap_session.mount('https://', _basemap_adapter)
 @app.route('/api/map/basemap/<style>/<int:z>/<int:x>/<int:y>')
 # Same reasoning as map_tile above - now doubled further since each basemap
 # style pairs a Base layer with a Reference (labels) layer, both proxied here.
-@limiter.limit("600 per minute")
 def basemap_tile(style, z, x, y):
     """Proxy Esri's keyless ArcGIS Online basemap tiles server-side.
 
