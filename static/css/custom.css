@@ -912,6 +912,14 @@ body {
   color: var(--wv-color-accent);
 }
 
+.wv-tab-item:hover {
+  color: var(--wv-color-text-primary);
+}
+
+.wv-tab-item--active:hover {
+  color: var(--wv-color-accent);
+}
+
 .wv-tab-item__icon-wrap {
   position: relative;
   font-size: var(--wv-text-lg);
@@ -1203,6 +1211,15 @@ button.wv-nav-toggle {
 .wv-toggle__input:focus-visible + .wv-toggle__slider {
   outline: 2px solid var(--wv-color-border-focus);
   outline-offset: 2px;
+}
+
+.wv-toggle__switch:hover .wv-toggle__slider {
+  background: var(--wv-color-border-strong);
+}
+
+.wv-toggle__switch:hover .wv-toggle__input:checked + .wv-toggle__slider {
+  background: var(--wv-color-accent-hover, var(--wv-color-accent));
+  filter: brightness(1.1);
 }
 
 /* Icon Button */
@@ -2987,6 +3004,12 @@ button.wv-nav-toggle {
 
 .wv-comparison-card {
   padding: var(--wv-card-padding);
+  transition: transform var(--wv-transition-fast), box-shadow var(--wv-transition-fast);
+}
+
+.wv-comparison-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--wv-shadow-md);
 }
 
 .wv-comparison-card__city {
@@ -3900,6 +3923,12 @@ body[data-page="map"] .wv-content {
   align-items: flex-start;
   gap: var(--wv-space-4);
   padding: var(--wv-space-5);
+  transition: transform var(--wv-transition-fast), box-shadow var(--wv-transition-fast);
+}
+
+.wv-insight-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--wv-shadow-md);
 }
 
 .wv-insight-card__icon {
@@ -4090,6 +4119,13 @@ body[data-page="map"] .wv-content {
   border: 1px solid var(--wv-color-border);
   opacity: 0;
   animation: wv-ai-text-fade-in 500ms ease-out forwards;
+  transition: transform var(--wv-transition-fast), box-shadow var(--wv-transition-fast), border-color var(--wv-transition-fast);
+}
+
+.wv-ai-summary__stat:hover {
+  transform: translateY(-2px);
+  border-color: var(--wv-color-border-strong);
+  box-shadow: var(--wv-shadow-sm);
 }
 
 .wv-ai-summary__stat-value {
