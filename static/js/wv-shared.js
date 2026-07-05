@@ -49,6 +49,47 @@ class WVShared {
         this.setupInstallPrompt();
         this.autoGeolocateIfPermitted();
         this.setupNameModal();
+        this.showUpdateNoticeIfFlagged();
+    }
+
+    // ---- "What's new" notice after a background PWA update ----
+
+    async showUpdateNoticeIfFlagged() {
+        if (localStorage.getItem('wv_showUpdateNotice') !== 'true') return;
+        localStorage.removeItem('wv_showUpdateNotice');
+        let notes = [];
+        try {
+            const response = await fetch('/static/release-notes.json');
+            if (response.ok) ({ notes } = await response.json());
+        } catch {
+            // Fall through with an empty list - still worth telling the
+            // user an update happened even without the specifics.
+        }
+        this.showUpdateToast(notes || []);
+    }
+
+    showUpdateToast(notes) {
+        const toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) return;
+        const toast = document.createElement('div');
+        toast.className = 'wv-toast wv-toast--info';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        const notesHtml = notes.length > 0
+            ? `<ul class="wv-toast__list">${notes.slice(0, 4).map(n => `<li>${this.escapeHtml(n)}</li>`).join('')}</ul>`
+            : '';
+        toast.innerHTML = `
+            <div class="wv-toast__icon" aria-hidden="true"><i class="fas fa-wand-magic-sparkles"></i></div>
+            <div class="wv-toast__content">
+                <div class="wv-toast__title">WeatherView just updated</div>
+                ${notesHtml}
+            </div>
+            <button class="wv-toast__close" aria-label="Dismiss"><i class="fas fa-times" aria-hidden="true"></i></button>
+        `;
+        toast.querySelector('.wv-toast__close').addEventListener('click', () => this.removeToast(toast));
+        setTimeout(() => this.removeToast(toast), 9000);
+        toastContainer.appendChild(toast);
+        this.announceToScreenReader(`WeatherView just updated. ${notes.join('. ')}`);
     }
 
     // ---- Personalization (one-time name prompt) ----
@@ -777,6 +818,12 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (!hadExistingController || refreshingForNewWorker) return;
         refreshingForNewWorker = true;
+        // Flagged for the *next* page load (the one running the just-
+        // activated worker) rather than shown now - a toast an instant
+        // before the page reloads out from under it would just flash and
+        // vanish. wv-shared's init() picks this flag up and shows what's
+        // new once the fresh page has actually loaded.
+        localStorage.setItem('wv_showUpdateNotice', 'true');
         window.location.reload();
     });
 

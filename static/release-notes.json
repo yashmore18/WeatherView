@@ -1,0 +1,10 @@
+{
+  "version": "v17",
+  "notes": [
+    "New AI Summary page with a plain-language daily briefing",
+    "Real push notifications for sudden weather changes",
+    "Hourly forecast now shows every hour, not 3-hour steps",
+    "Personalized greeting on the Today page",
+    "Fixed alerts being hard to read in dark mode"
+  ]
+}

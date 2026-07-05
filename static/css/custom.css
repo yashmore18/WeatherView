@@ -2437,6 +2437,18 @@ button.wv-nav-toggle {
   line-height: var(--wv-line-height-normal);
 }
 
+.wv-toast__list {
+  margin: 0;
+  padding-left: var(--wv-space-4);
+  font-size: var(--wv-text-sm);
+  color: var(--wv-color-text-secondary);
+  line-height: var(--wv-line-height-normal);
+}
+
+.wv-toast__list li {
+  margin-bottom: 2px;
+}
+
 .wv-toast__close {
   flex-shrink: 0;
   width: 24px;
