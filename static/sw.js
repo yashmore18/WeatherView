@@ -1,7 +1,8 @@
 // Service Worker for WeatherView PWA
-const CACHE_NAME = 'yash-weather-app-v15';
+const CACHE_NAME = 'yash-weather-app-v16';
 const STATIC_CACHE_URLS = [
   '/',
+  '/ai-summary',
   '/forecast',
   '/map',
   '/locations',
@@ -17,7 +18,9 @@ const STATIC_CACHE_URLS = [
   '/static/js/forecast-insights.js',
   '/static/js/compare-insights.js',
   '/static/js/hourly-interpolate.js',
+  '/static/js/ai-summary-engine.js',
   '/static/js/pages/today.js',
+  '/static/js/pages/ai-summary.js',
   '/static/js/pages/forecast.js',
   '/static/js/pages/map.js',
   '/static/js/pages/locations.js',

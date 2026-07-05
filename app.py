@@ -178,6 +178,16 @@ def index():
     logger.info("Serving Today page")
     return render_template('index.html', active_page='today')
 
+@app.route('/ai-summary')
+def ai_summary_page():
+    """Render the AI Summary page - an algorithm-generated narrative
+    synthesizing current conditions, forecast trend, air quality, and
+    active alerts into one readable summary (see static/js/ai-summary-engine.js;
+    it's our own rule-based algorithm over live data, not a third-party
+    AI/LLM call - no new API dependency or cost)."""
+    logger.info("Serving AI Summary page")
+    return render_template('ai_summary.html', active_page='ai-summary')
+
 @app.route('/forecast')
 def forecast_page():
     """Render the Forecast page (hourly, 7-day, temperature chart, details)."""

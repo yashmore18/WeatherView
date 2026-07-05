@@ -16,6 +16,7 @@ class TestPageRoutes:
 
     @pytest.mark.parametrize("path,nav_label", [
         ('/', 'Today'),
+        ('/ai-summary', 'AI Summary'),
         ('/forecast', 'Forecast'),
         ('/map', 'Map'),
         ('/locations', 'Locations'),
