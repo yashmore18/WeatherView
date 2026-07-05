@@ -606,6 +606,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Service Worker registration for PWA
 if ('serviceWorker' in navigator) {
+    // Without this, a tab left open across a deploy can end up running HTML
+    // fetched fresh from the network (navigations are network-first) against
+    // JS/CSS still being served by the *old* service worker's cache-first
+    // static-asset handling, until that old worker finishes updating on its
+    // own schedule - any element the new HTML removed or renamed then reads
+    // as null to the stale JS. Reloading once when the new worker actually
+    // takes control (which only happens after it's fully installed) puts
+    // both HTML and assets back on the same version immediately.
+    let refreshingForNewWorker = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshingForNewWorker) return;
+        refreshingForNewWorker = true;
+        window.location.reload();
+    });
+
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .then(registration => console.log('SW registered: ', registration))

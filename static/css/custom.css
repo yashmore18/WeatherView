@@ -3440,3 +3440,21 @@ body[data-page="map"] .wv-content {
   line-height: var(--wv-line-height-relaxed, 1.6);
 }
 
+/* ========================================
+ * 36. TOAST / TAB BAR OVERLAP FIX
+ * ======================================== */
+
+/* Toasts otherwise land at the same bottom offset as tablet/desktop (see the
+   max-width:768px rule earlier in this file), which puts them directly over
+   the bottom tab bar here - both are position:fixed to the viewport bottom,
+   so part of an error message ends up sitting behind/under the bar with no
+   way to scroll a fixed element into view. This block must stay physically
+   after the 768px rule in the file (equal-specificity selectors resolve by
+   source order, and max-width:767px also matches every width max-width:768px
+   matches) so it actually wins instead of being silently overridden by it. */
+@media (max-width: 767px) {
+  .wv-toast-container {
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px) + var(--wv-space-4));
+  }
+}
+
