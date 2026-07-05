@@ -48,8 +48,26 @@ class WVShared {
         this.initAlertsBadge();
         this.setupInstallPrompt();
         this.autoGeolocateIfPermitted();
-        this.setupNameModal();
+        this.setupOnboarding();
         this.showUpdateNoticeIfFlagged();
+    }
+
+    // ---- First-launch marketing/intro, chained before the name prompt ----
+
+    setupOnboarding() {
+        const modal = document.getElementById('onboardingModal');
+        const continueBtn = document.getElementById('onboardingModalContinue');
+        if (!modal || !continueBtn || localStorage.getItem('wv_onboardingDismissed') === 'true') {
+            this.setupNameModal();
+            return;
+        }
+
+        modal.style.display = 'flex';
+        continueBtn.addEventListener('click', () => {
+            localStorage.setItem('wv_onboardingDismissed', 'true');
+            modal.style.display = 'none';
+            this.setupNameModal();
+        }, { once: true });
     }
 
     // ---- "What's new" notice after a background PWA update ----

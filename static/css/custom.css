@@ -3624,6 +3624,24 @@ body[data-page="map"] .wv-content {
   color: var(--wv-color-text-primary);
 }
 
+.wv-modal--onboarding {
+  max-width: 420px;
+}
+
+.wv-onboarding-list li {
+  opacity: 0;
+  transform: translateY(6px);
+  animation: wv-ai-text-fade-in 450ms ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wv-onboarding-list li {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
 .wv-modal__form .glass-input {
   width: 100%;
   text-align: center;

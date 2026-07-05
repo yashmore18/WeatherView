@@ -277,6 +277,37 @@
         </div>
     </div>
 
+    <!-- One-time first-launch intro, shown before the name prompt -->
+    <div id="onboardingModal" class="wv-modal-backdrop" style="display: none;">
+        <div class="wv-modal wv-modal--onboarding glass-card" role="dialog" aria-modal="true" aria-labelledby="onboardingModalTitle">
+            <div class="wv-modal__icon" aria-hidden="true">
+                <i class="fas fa-cloud-sun-rain"></i>
+            </div>
+            <h2 id="onboardingModalTitle" class="wv-modal__title">Welcome to WeatherView</h2>
+            <ul class="wv-modal__feature-list wv-onboarding-list">
+                <li style="animation-delay: 80ms">
+                    <i class="fas fa-bolt" aria-hidden="true"></i>
+                    <span><strong>Fast and to the point</strong> - real hourly forecasts, live air quality, and a map, with no clutter or forced sign-up.</span>
+                </li>
+                <li style="animation-delay: 200ms">
+                    <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+                    <span><strong>An AI Summary page</strong> that reads the conditions for you and calls out when to grab an umbrella or stay in.</span>
+                </li>
+                <li style="animation-delay: 320ms">
+                    <i class="fas fa-shield-halved" aria-hidden="true"></i>
+                    <span><strong>Works offline</strong> as an installable app, and keeps everything about you - name, favorites, preferences - on your device only.</span>
+                </li>
+                <li style="animation-delay: 440ms">
+                    <i class="fas fa-code-branch" aria-hidden="true"></i>
+                    <span><strong>Fully open-source</strong> - inspect or contribute to the code anytime from the link in the footer.</span>
+                </li>
+            </ul>
+            <div class="wv-modal__actions">
+                <button type="button" class="wv-btn wv-btn--primary" id="onboardingModalContinue">Get Started</button>
+            </div>
+        </div>
+    </div>
+
     <!-- One-time name prompt, personalizes greetings -->
     <div id="nameModal" class="wv-modal-backdrop" style="display: none;">
         <div class="wv-modal glass-card" role="dialog" aria-modal="true" aria-labelledby="nameModalTitle">
