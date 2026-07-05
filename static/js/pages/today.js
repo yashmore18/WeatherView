@@ -11,11 +11,15 @@ class TodayPage {
 
         this.setupEventListeners();
         this.setupPullToRefresh();
+        this.displayGreeting();
         this.loadInitialCity();
         if (!this.wv.getResolvedCity()) this.loadPopularCities();
 
         document.addEventListener('wv:cityselected', (e) => this.handleCitySelected(e.detail));
         document.addEventListener('wv:unitschange', () => this.refresh());
+        // The name modal can be answered while already sitting on this page -
+        // update the greeting immediately rather than waiting for a reload.
+        document.addEventListener('wv:namechange', () => this.displayGreeting());
 
         setInterval(() => this.refreshUpdatedLabel(), 60000);
     }
@@ -464,10 +468,31 @@ class TodayPage {
         }
     }
 
+    displayGreeting() {
+        const name = this.wv.getUserName();
+        const heroGreetingEl = document.getElementById('heroGreeting');
+        const emptyTitleEl = document.getElementById('emptyTitle');
+        if (name) {
+            // textContent (not innerHTML) below already prevents any markup
+            // injection from a name containing HTML-special characters, so
+            // no separate escaping is needed here.
+            const greeting = `${this.wv.getGreeting()}, ${name}`;
+            if (heroGreetingEl) {
+                heroGreetingEl.textContent = greeting;
+                heroGreetingEl.style.display = 'block';
+            }
+            if (emptyTitleEl) emptyTitleEl.textContent = `${greeting}!`;
+        } else {
+            if (heroGreetingEl) heroGreetingEl.style.display = 'none';
+            if (emptyTitleEl) emptyTitleEl.textContent = 'Welcome to WeatherView';
+        }
+    }
+
     displayHeroCard(data) {
         const tempUnit = this.wv.currentUnits === 'imperial' ? '°F' : '°C';
         const windUnit = this.wv.currentUnits === 'imperial' ? 'mph' : 'm/s';
 
+        this.displayGreeting();
         document.getElementById('heroTitle').textContent = data.city;
         this.animateTemperature(document.getElementById('heroTemp'), Math.round(data.temp));
         document.getElementById('heroTempUnit').textContent = tempUnit;

@@ -1620,6 +1620,13 @@ body {
   margin: 0;
 }
 
+.wv-hero-card__greeting {
+  margin: 0 0 var(--wv-space-3);
+  color: var(--wv-color-text-secondary);
+  font-size: var(--wv-text-sm);
+  font-weight: var(--wv-font-weight-medium);
+}
+
 .wv-hero-card__actions {
   display: flex;
   gap: var(--wv-space-2);
@@ -3182,6 +3189,26 @@ body[data-page="map"] .wv-content {
   font-size: var(--wv-text-sm);
 }
 
+.wv-profile-form {
+  display: flex;
+  gap: var(--wv-space-3);
+}
+
+.wv-profile-form .glass-input {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .wv-profile-form {
+    flex-wrap: wrap;
+  }
+
+  .wv-profile-form .glass-input {
+    flex-basis: 100%;
+  }
+}
+
 /* ========================================
  * 34. SPLASH SCREEN (standalone PWA cold launch only)
  * ======================================== */
@@ -3305,6 +3332,83 @@ body[data-page="map"] .wv-content {
   .wv-install-prompt__desc {
     display: none;
   }
+}
+
+/* ========================================
+ * 38. NAME MODAL (first-visit personalization)
+ * ======================================== */
+
+.wv-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--wv-z-modal-backdrop);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--wv-space-4);
+  animation: wv-modal-backdrop-in 200ms ease-out;
+}
+
+@keyframes wv-modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.wv-modal {
+  position: relative;
+  z-index: var(--wv-z-modal);
+  width: 100%;
+  max-width: 360px;
+  padding: var(--wv-space-8) var(--wv-space-6) var(--wv-space-6);
+  text-align: center;
+  animation: wv-modal-in 250ms ease-out;
+}
+
+@keyframes wv-modal-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.wv-modal__icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto var(--wv-space-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--wv-radius-full);
+  background: var(--wv-color-accent-light);
+  color: var(--wv-color-accent);
+  font-size: var(--wv-text-2xl);
+}
+
+.wv-modal__title {
+  margin: 0 0 var(--wv-space-2);
+  font-size: var(--wv-text-xl);
+  font-weight: var(--wv-font-weight-semibold);
+}
+
+.wv-modal__desc {
+  margin: 0 0 var(--wv-space-5);
+  color: var(--wv-color-text-secondary);
+  font-size: var(--wv-text-sm);
+}
+
+.wv-modal__form .glass-input {
+  width: 100%;
+  text-align: center;
+  margin-bottom: var(--wv-space-4);
+}
+
+.wv-modal__actions {
+  display: flex;
+  gap: var(--wv-space-3);
+}
+
+.wv-modal__actions .wv-btn {
+  flex: 1;
 }
 
 /* ========================================

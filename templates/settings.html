@@ -4,6 +4,26 @@
 
 {% block content %}
 <div class="wv-page">
+    <section class="wv-section" aria-labelledby="settingsProfileTitle">
+        <header class="wv-section__header">
+            <h2 id="settingsProfileTitle" class="wv-section__title">Profile</h2>
+        </header>
+        <div class="wv-settings-card glass-card">
+            <div class="wv-settings-row">
+                <div>
+                    <p class="wv-settings-row__label">Your name</p>
+                    <p class="wv-settings-row__hint">Used for a friendly greeting - stays on this device only.</p>
+                </div>
+            </div>
+            <form id="profileNameForm" class="wv-profile-form">
+                <label for="profileNameInput" class="sr-only">Your name</label>
+                <input type="text" id="profileNameInput" class="glass-input" placeholder="Your name" maxlength="40" autocomplete="off">
+                <button type="submit" class="wv-btn wv-btn--primary wv-btn--sm">Save</button>
+                <button type="button" class="wv-btn wv-btn--secondary glass-btn wv-btn--sm" id="profileNameClear">Clear</button>
+            </form>
+        </div>
+    </section>
+
     <section class="wv-section" aria-labelledby="settingsUnitsTitle">
         <header class="wv-section__header">
             <h2 id="settingsUnitsTitle" class="wv-section__title">Units</h2>

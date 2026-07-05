@@ -261,6 +261,25 @@
         </div>
     </div>
 
+    <!-- One-time name prompt, personalizes greetings -->
+    <div id="nameModal" class="wv-modal-backdrop" style="display: none;">
+        <div class="wv-modal glass-card" role="dialog" aria-modal="true" aria-labelledby="nameModalTitle">
+            <div class="wv-modal__icon" aria-hidden="true">
+                <i class="fas fa-hand-sparkles"></i>
+            </div>
+            <h2 id="nameModalTitle" class="wv-modal__title">What should we call you?</h2>
+            <p class="wv-modal__desc">Just for a friendly greeting - nothing is sent anywhere, it stays on this device.</p>
+            <form id="nameModalForm" class="wv-modal__form">
+                <label for="nameModalInput" class="sr-only">Your name</label>
+                <input type="text" id="nameModalInput" class="glass-input" placeholder="Your name" maxlength="40" autocomplete="off">
+                <div class="wv-modal__actions">
+                    <button type="button" class="wv-btn wv-btn--secondary glass-btn" id="nameModalSkip">Skip</button>
+                    <button type="submit" class="wv-btn wv-btn--primary">Continue</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Custom JavaScript -->
     <script src="{{ url_for('static', filename='js/weather-scene.js') }}"></script>
     <script src="{{ url_for('static', filename='js/wv-shared.js') }}"></script>

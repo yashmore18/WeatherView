@@ -9,6 +9,28 @@ class SettingsPage {
         this.setupUnitsToggle();
         this.setupThemeToggle();
         this.setupAlertPrefs();
+        this.setupProfileName();
+    }
+
+    setupProfileName() {
+        const form = document.getElementById('profileNameForm');
+        const input = document.getElementById('profileNameInput');
+        const clearBtn = document.getElementById('profileNameClear');
+        if (!form || !input || !clearBtn) return;
+
+        input.value = this.wv.getUserName() || '';
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.wv.setUserName(input.value);
+            this.wv.showSuccess(input.value.trim() ? 'Name saved' : 'Name cleared');
+        });
+
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            this.wv.setUserName(null);
+            this.wv.showSuccess('Name cleared');
+        });
     }
 
     setupUnitsToggle() {

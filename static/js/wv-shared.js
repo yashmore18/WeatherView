@@ -48,6 +48,82 @@ class WVShared {
         this.initAlertsBadge();
         this.setupInstallPrompt();
         this.autoGeolocateIfPermitted();
+        this.setupNameModal();
+    }
+
+    // ---- Personalization (one-time name prompt) ----
+
+    getUserName() {
+        return localStorage.getItem('wv_userName') || null;
+    }
+
+    /** @param {string|null} name - null/empty clears the stored name. */
+    setUserName(name) {
+        const trimmed = (name || '').trim();
+        if (trimmed) {
+            localStorage.setItem('wv_userName', trimmed);
+        } else {
+            localStorage.removeItem('wv_userName');
+        }
+        document.dispatchEvent(new CustomEvent('wv:namechange', { detail: { name: trimmed || null } }));
+    }
+
+    getGreeting() {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good morning';
+        if (hour < 18) return 'Good afternoon';
+        return 'Good evening';
+    }
+
+    setupNameModal() {
+        const modal = document.getElementById('nameModal');
+        const form = document.getElementById('nameModalForm');
+        const input = document.getElementById('nameModalInput');
+        const skipBtn = document.getElementById('nameModalSkip');
+        if (!modal || !form || !input || !skipBtn) return;
+
+        // Only ask once, ever - if a name is already saved there's nothing
+        // to ask, and a prior skip is treated as a real "no thanks" rather
+        // than something to nag about on every future visit (the name can
+        // still be added later from Settings).
+        if (this.getUserName() || localStorage.getItem('wv_nameModalDismissed') === 'true') {
+            return;
+        }
+
+        const close = () => {
+            modal.style.display = 'none';
+            document.removeEventListener('keydown', onEscape);
+        };
+        const onEscape = (e) => {
+            if (e.key === 'Escape') {
+                localStorage.setItem('wv_nameModalDismissed', 'true');
+                close();
+            }
+        };
+
+        modal.style.display = 'flex';
+        document.addEventListener('keydown', onEscape);
+        // Deferred focus - the modal's own entrance animation shouldn't be
+        // interrupted/skipped by an immediate focus-triggered scroll.
+        setTimeout(() => input.focus(), 100);
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.setUserName(input.value);
+            close();
+        });
+
+        skipBtn.addEventListener('click', () => {
+            localStorage.setItem('wv_nameModalDismissed', 'true');
+            close();
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                localStorage.setItem('wv_nameModalDismissed', 'true');
+                close();
+            }
+        });
     }
 
     // Previously the user had to click "My Location" every single visit,
