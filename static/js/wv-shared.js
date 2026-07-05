@@ -121,19 +121,26 @@ class WVShared {
         const form = document.getElementById('nameModalForm');
         const input = document.getElementById('nameModalInput');
         const skipBtn = document.getElementById('nameModalSkip');
-        if (!modal || !form || !input || !skipBtn) return;
+        if (!modal || !form || !input || !skipBtn) {
+            this.maybeShowPermissionsPrompt();
+            return;
+        }
 
         // Only ask once, ever - if a name is already saved there's nothing
         // to ask, and a prior skip is treated as a real "no thanks" rather
         // than something to nag about on every future visit (the name can
         // still be added later from Settings).
         if (this.getUserName() || localStorage.getItem('wv_nameModalDismissed') === 'true') {
+            this.maybeShowPermissionsPrompt();
             return;
         }
 
         const close = () => {
             modal.style.display = 'none';
             document.removeEventListener('keydown', onEscape);
+            // Chained rather than shown at the same time - two overlapping
+            // first-visit modals is worse than one, then the other.
+            this.maybeShowPermissionsPrompt();
         };
         const onEscape = (e) => {
             if (e.key === 'Escape') {
@@ -165,6 +172,79 @@ class WVShared {
                 close();
             }
         });
+    }
+
+    // ---- One-time "enable location & notifications" prompt ----
+
+    async maybeShowPermissionsPrompt() {
+        const modal = document.getElementById('permissionsModal');
+        const enableBtn = document.getElementById('permissionsModalEnable');
+        const skipBtn = document.getElementById('permissionsModalSkip');
+        if (!modal || !enableBtn || !skipBtn) return;
+
+        if (localStorage.getItem('wv_permissionsPromptDismissed') === 'true') return;
+
+        // Don't ask for what's already settled - if the browser reports
+        // both permissions already decided (either way), asking again would
+        // just be noise the user already resolved via a native prompt.
+        try {
+            const geoStatus = navigator.permissions ? await navigator.permissions.query({ name: 'geolocation' }) : null;
+            const geoSettled = geoStatus && geoStatus.state !== 'prompt';
+            const notifSettled = 'Notification' in window && Notification.permission !== 'default';
+            if (geoSettled && notifSettled) {
+                localStorage.setItem('wv_permissionsPromptDismissed', 'true');
+                return;
+            }
+        } catch {
+            // Permissions API query for 'geolocation' isn't supported in
+            // every browser - fall through and just show the prompt.
+        }
+
+        const close = () => {
+            modal.style.display = 'none';
+        };
+
+        modal.style.display = 'flex';
+
+        enableBtn.addEventListener('click', async () => {
+            localStorage.setItem('wv_permissionsPromptDismissed', 'true');
+            enableBtn.disabled = true;
+            close();
+
+            // Sequential, not parallel - both need to originate from this
+            // same click (a user gesture) to reliably trigger their native
+            // browser prompts, which a Promise.all's interleaving can't
+            // guarantee the way a plain await chain does.
+            await this.getLocationWeather().catch(() => {});
+
+            if (window.WVPush && window.WVPush.isSupported()) {
+                const resolved = this.getResolvedCity();
+                if (resolved) {
+                    try {
+                        const params = resolved.city
+                            ? { city: resolved.city, units: this.currentUnits }
+                            : { lat: resolved.lat, lon: resolved.lon, units: this.currentUnits };
+                        const data = await this.fetchCurrentWeather(params);
+                        await window.WVPush.subscribe({ city: data.city, lat: data.lat, lon: data.lon }, this.currentUnits);
+                    } catch {
+                        // Best-effort - if push setup fails here, the user
+                        // can still turn it on later from Settings.
+                    }
+                }
+            }
+        }, { once: true });
+
+        skipBtn.addEventListener('click', () => {
+            localStorage.setItem('wv_permissionsPromptDismissed', 'true');
+            close();
+        }, { once: true });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                localStorage.setItem('wv_permissionsPromptDismissed', 'true');
+                close();
+            }
+        }, { once: true });
     }
 
     // Previously the user had to click "My Location" every single visit,

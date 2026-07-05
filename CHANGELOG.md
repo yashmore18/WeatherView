@@ -2,6 +2,33 @@
 
 Notable changes to WeatherView, newest first.
 
+## v2.1.0
+
+- Fixed search suggestions becoming unreadable when they overlapped page
+  content behind them (the empty-state welcome card, hero card, etc.) -
+  the dropdown's glass background was only ~15-25% opaque (tuned for a
+  flat page background), so busy content bled through strongly enough to
+  make its own text hard to read. Now uses the same ~62%-opaque scrim
+  every content card uses for real separation from the animated scene.
+  Z-index/stacking was already correct; this was a contrast problem, not
+  an overlap-order bug.
+- Added a one-time "Get the most out of WeatherView" prompt (shown once,
+  chained after the name prompt so the two never stack) that explains
+  *why* before triggering the browser's own location and notification
+  permission dialogs - skips itself entirely if both are already decided
+  either way.
+- Added "Clear cache & reset app" to Settings - resets all local data and
+  the offline cache for a fresh start if the app ever gets stuck on a
+  stale cached version, with an explicit warning it can't be undone.
+- The WeatherView logo is now a real link back to Today, both in the
+  desktop/tablet sidebar and (new) a compact icon in the mobile header,
+  which previously had blank space there once the hamburger disappears at
+  phone widths.
+- Added a Changelog link to the footer's About section.
+- Verified the smart alerts engine end-to-end against live rainy-city
+  data (alert renders, sidebar badge updates, per-alert Settings toggles
+  correctly suppress) - no issues found.
+
 ## v2.0.0
 
 - **New AI Summary page** (right after Today in the nav) - synthesizes

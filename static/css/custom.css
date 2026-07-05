@@ -417,9 +417,18 @@
   border-color: var(--wv-glass-border-dark);
 }
 
-/* Glass dropdown */
+/* Glass dropdown - uses the same ~62%-opaque scrim .glass-card/.wv-header
+   use for separation from the animated sky scene, not the much lighter
+   ~15-25%-opaque --wv-glass-bg-* tokens plain glass buttons/inputs use.
+   Search suggestions sit on top of whatever busy page content (the empty-
+   state welcome card, hero card, etc.) happens to be behind the search
+   bar - at 15% opacity that content visually bled through the dropdown
+   strongly enough to make its own text unreadable, which read as the
+   dropdown "getting overlapped" even though z-index/stacking was already
+   correct (confirmed via elementFromPoint - the dropdown really was on
+   top, it just wasn't opaque enough to look like it). */
 .glass-dropdown {
-  background: var(--wv-glass-bg-light);
+  background: var(--wv-glass-text-scrim-light);
   backdrop-filter: blur(var(--wv-glass-blur)) saturate(var(--wv-glass-saturate));
   -webkit-backdrop-filter: blur(var(--wv-glass-blur)) saturate(var(--wv-glass-saturate));
   border: 1px solid var(--wv-glass-border-light);
@@ -430,7 +439,7 @@
 }
 
 [data-bs-theme="dark"] .glass-dropdown {
-  background: var(--wv-glass-bg-dark);
+  background: var(--wv-glass-text-scrim-dark);
   border-color: var(--wv-glass-border-dark);
 }
 
@@ -797,6 +806,13 @@ body {
   color: var(--wv-color-text-primary);
   font-size: var(--wv-text-xl);
   font-weight: var(--wv-font-weight-semibold);
+  text-decoration: none;
+  border-radius: var(--wv-radius-lg);
+  transition: background var(--wv-transition-fast);
+}
+
+.wv-sidebar__brand:hover {
+  background: var(--wv-color-surface-hover);
 }
 
 .wv-sidebar__brand i {
@@ -995,6 +1011,27 @@ button.wv-nav-toggle {
   font-weight: var(--wv-font-weight-bold);
   color: var(--wv-color-text-primary);
   margin: 0;
+}
+
+/* Hidden on desktop/tablet - the sidebar's own brand link already covers
+   this there. Only shown on phones (see the max-width:767px block below),
+   where the hamburger disappears entirely (the bottom tab bar replaces it)
+   and the header's left side would otherwise be empty space with no way
+   back to Today except the tab bar's own icon. */
+.wv-header__logo {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--wv-icon-btn-size);
+  height: var(--wv-icon-btn-size);
+  color: var(--wv-color-accent);
+  font-size: var(--wv-text-xl);
+  border-radius: var(--wv-icon-btn-radius);
+  transition: background var(--wv-transition-fast);
+}
+
+.wv-header__logo:hover {
+  background: var(--wv-color-surface-hover);
 }
 
 .wv-header__center {
@@ -1498,6 +1535,10 @@ button.wv-nav-toggle {
   .wv-sidebar,
   .wv-sidebar-backdrop {
     display: none !important;
+  }
+
+  .wv-header__logo {
+    display: flex;
   }
 
   /* On phone widths the footer's About section is only worth the screen
@@ -3331,6 +3372,20 @@ body[data-page="map"] .wv-content {
   font-size: var(--wv-text-sm);
 }
 
+.wv-settings-row__warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wv-space-2);
+  margin: var(--wv-space-2) 0 0;
+  color: var(--wv-color-warning);
+  font-size: var(--wv-text-sm);
+}
+
+.wv-settings-row__warning i {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
 .wv-profile-form {
   display: flex;
   gap: var(--wv-space-3);
@@ -3536,6 +3591,37 @@ body[data-page="map"] .wv-content {
   margin: 0 0 var(--wv-space-5);
   color: var(--wv-color-text-secondary);
   font-size: var(--wv-text-sm);
+}
+
+.wv-modal__feature-list {
+  list-style: none;
+  margin: 0 0 var(--wv-space-5);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wv-space-3);
+  text-align: left;
+}
+
+.wv-modal__feature-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wv-space-3);
+  font-size: var(--wv-text-sm);
+  color: var(--wv-color-text-secondary);
+  line-height: 1.5;
+}
+
+.wv-modal__feature-list i {
+  flex: 0 0 auto;
+  width: 20px;
+  margin-top: 2px;
+  color: var(--wv-color-accent);
+  text-align: center;
+}
+
+.wv-modal__feature-list strong {
+  color: var(--wv-color-text-primary);
 }
 
 .wv-modal__form .glass-input {

@@ -11,6 +11,48 @@ class SettingsPage {
         this.setupAlertPrefs();
         this.setupProfileName();
         this.setupPushToggle();
+        this.setupClearCache();
+    }
+
+    setupClearCache() {
+        const btn = document.getElementById('clearCacheBtn');
+        if (!btn) return;
+
+        btn.addEventListener('click', async () => {
+            const confirmed = window.confirm(
+                "This resets units, favorites, dark mode, your name, alert preferences, and push " +
+                "notifications back to defaults, and clears the offline cache. This can't be undone " +
+                "- only continue if you're actually running into an issue.\n\nClear cache and reset now?"
+            );
+            if (!confirmed) return;
+
+            btn.disabled = true;
+            try {
+                // Best-effort: an active push subscription left behind after
+                // localStorage is wiped would still receive pushes with no
+                // way for the (now blank) UI to turn it back off.
+                if (window.WVPush) {
+                    await window.WVPush.unsubscribe().catch(() => {});
+                }
+
+                localStorage.clear();
+                sessionStorage.clear();
+
+                if ('caches' in window) {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(key => caches.delete(key)));
+                }
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(registrations.map(r => r.unregister()));
+                }
+            } finally {
+                // Reload regardless of whether every cleanup step above
+                // succeeded - a partial clear plus a fresh load is still
+                // better than leaving the button in a disabled dead-end state.
+                window.location.href = '/';
+            }
+        });
     }
 
     async setupPushToggle() {

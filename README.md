@@ -1,6 +1,6 @@
 # WeatherView
 
-**v2.0.0**
+**v2.1.0**
 
 A fast, mobile-first weather app for any city in the world - current
 conditions, real hourly + 7-day forecasts, an algorithm-generated AI
@@ -114,6 +114,12 @@ your browser never talks to a third party directly.
 - A one-time, skippable name prompt personalizes the Today page with a
   time-of-day greeting ("Good afternoon, Yash") - stored in `localStorage`
   only, editable/clearable anytime from Settings, nothing sent to a server
+- A second one-time prompt explains *why* before asking for location and
+  notification permission, instead of the browser's native dialogs
+  appearing out of nowhere with no context - skips itself if both are
+  already decided either way
+- "Clear cache & reset app" in Settings for a genuine fresh start if the
+  app ever gets stuck on a stale cached version
 - Dark/light mode with automatic system-preference detection
 - Fully responsive: desktop sidebar, tablet off-canvas drawer, phone bottom
   tab bar - three genuinely different navigation patterns, not one shrunk

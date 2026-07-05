@@ -133,10 +133,36 @@
             </div>
         </div>
     </section>
+
+    <section class="wv-section" aria-labelledby="settingsAdvancedTitle">
+        <header class="wv-section__header">
+            <h2 id="settingsAdvancedTitle" class="wv-section__title">Advanced</h2>
+        </header>
+        <div class="wv-settings-card glass-card">
+            <div class="wv-settings-row">
+                <div>
+                    <p class="wv-settings-row__label">Clear cache &amp; reset app</p>
+                    <p class="wv-settings-row__hint">
+                        Resets units, favorites, dark mode, your name, alert preferences, and push
+                        notifications back to defaults, and clears the offline cache.
+                    </p>
+                    <p class="wv-settings-row__warning">
+                        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                        Only use this if you're running into a caching issue (e.g. the app looks
+                        stuck on an old version) - it cannot be undone, and you'll need to redo any
+                        personalization.
+                    </p>
+                </div>
+                <button type="button" class="wv-btn wv-btn--secondary glass-btn wv-btn--sm" id="clearCacheBtn" aria-label="Clear cache and reset app">
+                    <i class="fas fa-broom" aria-hidden="true"></i>
+                    <span>Clear cache</span>
+                </button>
+            </div>
+        </div>
+    </section>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/push-notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pages/settings.js') }}"></script>
 {% endblock %}
