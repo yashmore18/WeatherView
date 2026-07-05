@@ -329,6 +329,12 @@ def search_locations():
 ALLOWED_MAP_LAYERS = {'precipitation_new', 'clouds_new', 'temp_new', 'wind_new'}
 
 @app.route('/api/map/tile/<layer>/<int:z>/<int:x>/<int:y>')
+# A single map pageload/pan fires dozens of tile requests at once (each of
+# the 4 weather layers, times however many tiles are visible) - the global
+# default limit is sized for normal API calls, not this, and blocking tiles
+# with 429s just makes the map look broken. Tiles are cheap (cached
+# server-side, bounded upstream cost), so they get their own generous ceiling.
+@limiter.limit("600 per minute")
 def map_tile(layer, z, x, y):
     """Proxy OpenWeatherMap tile requests so the API key stays server-side."""
     if layer not in ALLOWED_MAP_LAYERS:
@@ -361,7 +367,13 @@ def map_tile(layer, z, x, y):
     response.headers['Cache-Control'] = 'public, max-age=600'
     return response
 
-ALLOWED_BASEMAP_STYLES = {'World_Light_Gray_Base', 'World_Dark_Gray_Base'}
+ALLOWED_BASEMAP_STYLES = {
+    'World_Light_Gray_Base', 'World_Dark_Gray_Base',
+    # Esri's matching "Reference" tiles for each Canvas base - transparent
+    # PNGs with place labels/roads/borders, meant to be layered on top of the
+    # (deliberately label-free) Base tiles above rather than used alone.
+    'World_Light_Gray_Reference', 'World_Dark_Gray_Reference',
+}
 # Pooled session for the same reason weather_api.py has one - the basemap
 # proxy can fire a couple dozen requests per initial map load/pan/zoom.
 _basemap_session = requests.Session()
@@ -369,6 +381,9 @@ _basemap_adapter = requests.adapters.HTTPAdapter(pool_connections=20, pool_maxsi
 _basemap_session.mount('https://', _basemap_adapter)
 
 @app.route('/api/map/basemap/<style>/<int:z>/<int:x>/<int:y>')
+# Same reasoning as map_tile above - now doubled further since each basemap
+# style pairs a Base layer with a Reference (labels) layer, both proxied here.
+@limiter.limit("600 per minute")
 def basemap_tile(style, z, x, y):
     """Proxy Esri's keyless ArcGIS Online basemap tiles server-side.
 

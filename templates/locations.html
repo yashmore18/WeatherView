@@ -18,18 +18,34 @@
         </div>
     </section>
 
-    <!-- Saved-city comparison -->
+    <!-- Two-location head-to-head comparison -->
     <section id="comparisonSection" class="wv-section" aria-labelledby="comparisonTitle">
         <header class="wv-section__header">
-            <h2 id="comparisonTitle" class="wv-section__title">Compare Conditions</h2>
+            <h2 id="comparisonTitle" class="wv-section__title">Compare Two Locations</h2>
         </header>
-        <div class="wv-comparison-grid" id="comparisonGrid" role="list" aria-label="Favorite city conditions">
-            <!-- Comparison cards populated by JS -->
+        <form id="compareForm" class="wv-compare-form" autocomplete="off">
+            <div class="wv-compare-form__field">
+                <label for="compareCityA" class="sr-only">First city</label>
+                <input type="text" id="compareCityA" class="glass-input" placeholder="e.g. London" required>
+            </div>
+            <span class="wv-compare-form__vs" aria-hidden="true">vs</span>
+            <div class="wv-compare-form__field">
+                <label for="compareCityB" class="sr-only">Second city</label>
+                <input type="text" id="compareCityB" class="glass-input" placeholder="e.g. Paris" required>
+            </div>
+            <button type="submit" class="wv-btn wv-btn--primary" id="compareSubmit">
+                <i class="fas fa-balance-scale" aria-hidden="true"></i>
+                <span>Compare</span>
+            </button>
+        </form>
+        <div id="compareResult" class="wv-compare-result">
+            <p class="wv-comparison-empty">Enter two cities above to see how their conditions compare.</p>
         </div>
     </section>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/compare-insights.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pages/locations.js') }}"></script>
 {% endblock %}

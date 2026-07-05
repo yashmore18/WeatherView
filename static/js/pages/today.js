@@ -83,6 +83,7 @@ class TodayPage {
             e.preventDefault();
             dist = Math.min(delta * 0.5, maxPull);
             indicator.style.transform = `translateY(${dist - 60}px)`;
+            indicator.style.opacity = String(Math.min(dist / threshold, 1));
             indicator.classList.toggle('wv-pull-refresh--ready', dist >= threshold);
         }, { passive: false });
 
@@ -105,10 +106,12 @@ class TodayPage {
                 } finally {
                     indicator.classList.remove('wv-pull-refresh--loading');
                     indicator.style.transform = '';
+                    indicator.style.opacity = '';
                 }
             } else {
                 indicator.classList.remove('wv-pull-refresh--ready');
                 indicator.style.transform = '';
+                indicator.style.opacity = '';
             }
 
             setTimeout(() => { indicator.style.transition = ''; }, 220);
@@ -485,7 +488,7 @@ class TodayPage {
         // actual sun position (from the icon suffix), independent of the
         // manual dark-mode toggle - see custom.css's text-scrim tokens for
         // how contrast stays intact regardless of the two being in sync.
-        if (this.wv.scene) this.wv.scene.applyWeatherIcon(data.icon);
+        this.wv.applySceneIcon(data.icon);
 
         const regionEl = document.querySelector('.wv-hero-card__region');
         if (regionEl) regionEl.textContent = `${data.country}${data.state ? ', ' + data.state : ''}`;

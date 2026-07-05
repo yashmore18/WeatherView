@@ -15,8 +15,28 @@ class WVShared {
         this.searchTimeout = null;
         this.isLoading = false;
         this.scene = document.getElementById('wvScene') ? new WeatherScene(document.getElementById('wvScene')) : null;
+        // Settings and Locations never fetch a "current" weather condition of
+        // their own (Settings has none; Locations shows several cities at
+        // once with no single "here") - without this they're permanently
+        // stuck on the scene's default bright/cloudy daytime look, regardless
+        // of what's actually happening outside or whether dark mode is on.
+        // Re-applying whatever the last page that did fetch weather saw
+        // keeps the mood consistent everywhere.
+        if (this.scene) {
+            const lastIcon = localStorage.getItem('wv_lastWeatherIcon');
+            if (lastIcon) this.scene.applyWeatherIcon(lastIcon);
+        }
 
         this.init();
+    }
+
+    /** Applies a weather icon to the sky scene and remembers it so pages
+     * with no weather fetch of their own (Settings, Locations) can still
+     * open in a matching mood instead of a static default. */
+    applySceneIcon(icon) {
+        if (!icon) return;
+        localStorage.setItem('wv_lastWeatherIcon', icon);
+        if (this.scene) this.scene.applyWeatherIcon(icon);
     }
 
     init() {

@@ -7,6 +7,19 @@
  * apply, or an alert object { id, severity, icon, title, message }.
  */
 
+// toLocaleTimeString() renders in the *browser's* timezone, not the searched
+// city's - for a city in a different zone than the viewer, that silently
+// produces a wall-clock time that doesn't match the city at all (e.g. "2pm"
+// shown to someone whose own local time is already 3pm). Shifting the UTC
+// timestamp by the forecast's own timezone_offset before formatting, then
+// rendering that shifted instant *as UTC*, yields the city's actual local
+// clock time regardless of where the browser is.
+function formatCityLocalTime(unixSeconds, timezoneOffsetSeconds = 0) {
+    return new Date((unixSeconds + timezoneOffsetSeconds) * 1000).toLocaleTimeString('en-US', {
+        hour: 'numeric', hour12: true, timeZone: 'UTC'
+    });
+}
+
 // "141 minutes" reads as noise - round to the nearest 5 minutes and render
 // as hours+minutes, dropping whichever unit is zero.
 function formatDuration(totalMinutes) {
@@ -62,7 +75,7 @@ function checkRainEnding(currentWeather, forecast) {
         ? 'Rain should clear up within the hour.'
         : minutes <= 150
             ? `Rain should let up in about ${formatDuration(minutes)}.`
-            : `Rain is expected to continue for a few more hours, clearing around ${new Date(clearsAt.dt * 1000).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })}.`;
+            : `Rain is expected to continue for a few more hours, clearing around ${formatCityLocalTime(clearsAt.dt, forecast.timezone_offset)}.`;
 
     return {
         id: 'rain-ending',
@@ -172,4 +185,4 @@ function computeAlerts(currentWeather, forecast, airQuality, prefs = {}, units =
     return alerts;
 }
 
-window.WVAlerts = { computeAlerts, checkRainSoon, checkRainEnding, checkAqiSpike, checkTempSwing, checkGoodWeather, formatDuration };
+window.WVAlerts = { computeAlerts, checkRainSoon, checkRainEnding, checkAqiSpike, checkTempSwing, checkGoodWeather, formatDuration, formatCityLocalTime };

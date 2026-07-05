@@ -39,6 +39,7 @@ class MapPage {
         this.marker = null;
         this.activeLayer = null;
         this.baseLayer = null;
+        this.referenceLayer = null;
         // OpenWeatherMap's tiles already bake in their own per-pixel alpha
         // (e.g. temp_new tops out around 30% opaque) - they're designed to be
         // laid over a basemap at full opacity, not dimmed further. Multiplying
@@ -66,6 +67,15 @@ class MapPage {
         // overlay on any breakpoint, so the zoom buttons live there instead.
         this.map = L.map('wvMap', { zoomControl: false }).setView([20, 0], 2);
         L.control.zoom({ position: 'bottomright' }).addTo(this.map);
+
+        // Custom pane (between Leaflet's default overlayPane z400 and
+        // markerPane z600) so the label/reference layer always renders above
+        // both the basemap and the weather overlay - which share tilePane
+        // and stack purely by DOM order - regardless of which weather layer
+        // is active or how many times layers get swapped.
+        const referencePane = this.map.createPane('wvReferencePane');
+        referencePane.style.zIndex = 450;
+        referencePane.style.pointerEvents = 'none';
         const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
         this.setBasemap(isDark);
 
@@ -85,7 +95,9 @@ class MapPage {
         // Esri's "Canvas" styles give the muted, near-monochrome basemap
         // needed so colored weather overlays stay legible on top of it.
         if (this.baseLayer) this.map.removeLayer(this.baseLayer);
+        if (this.referenceLayer) this.map.removeLayer(this.referenceLayer);
         const style = isDark ? 'World_Dark_Gray_Base' : 'World_Light_Gray_Base';
+        const referenceStyle = isDark ? 'World_Dark_Gray_Reference' : 'World_Light_Gray_Reference';
         this.baseLayer = L.tileLayer(`/api/map/basemap/${style}/{z}/{x}/{y}`, {
             attribution: '&copy; <a href="https://www.esri.com">Esri</a>',
             // This basemap's own tiles stop at z16 - maxNativeZoom lets the
@@ -95,8 +107,20 @@ class MapPage {
             maxNativeZoom: 16,
             maxZoom: 19
         });
+        // Esri's own pairing for these Canvas basemaps: the Base tiles are
+        // deliberately label-free (so weather-overlay colors read clearly),
+        // and the matching Reference tiles add place names/roads/borders as
+        // a separate transparent layer meant to sit above everything else -
+        // including the weather overlay - so labels stay legible no matter
+        // which layer is active.
+        this.referenceLayer = L.tileLayer(`/api/map/basemap/${referenceStyle}/{z}/{x}/{y}`, {
+            maxNativeZoom: 16,
+            maxZoom: 19,
+            pane: 'wvReferencePane'
+        });
         this.baseLayer.addTo(this.map);
         this.baseLayer.bringToBack();
+        this.referenceLayer.addTo(this.map);
     }
 
     setupLayerButtons() {
@@ -154,7 +178,7 @@ class MapPage {
                 : { lat: detail.lat, lon: detail.lon, units: this.wv.currentUnits };
             const data = await this.wv.fetchCurrentWeather(params);
             this.wv.setLastCity(data.city);
-            if (this.wv.scene) this.wv.scene.applyWeatherIcon(data.icon);
+            this.wv.applySceneIcon(data.icon);
             this.centerOn(data.lat, data.lon, data.city);
         } catch (error) {
             this.wv.showError(error.message);

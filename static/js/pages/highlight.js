@@ -42,7 +42,7 @@ class HighlightPage {
                 : { lat: detail.lat, lon: detail.lon, units: this.wv.currentUnits };
             const data = await this.wv.fetchCurrentWeather(params);
             this.wv.setLastCity(data.city);
-            if (this.wv.scene) this.wv.scene.applyWeatherIcon(data.icon);
+            this.wv.applySceneIcon(data.icon);
             this.display(data);
         } catch (error) {
             this.wv.showError(error.message);

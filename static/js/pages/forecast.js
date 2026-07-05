@@ -54,7 +54,7 @@ class ForecastPage {
             ]);
 
             this.wv.setLastCity(currentData.city);
-            if (this.wv.scene) this.wv.scene.applyWeatherIcon(currentData.icon);
+            this.wv.applySceneIcon(currentData.icon);
             this.hasData = true;
             this.showSections();
             this.displayInsights(forecastData);

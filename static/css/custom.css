@@ -1231,6 +1231,17 @@ body {
   color: var(--wv-color-text-primary);
 }
 
+/* Favoriting only swapped the star glyph (outline -> filled) with no color
+   change, so both states rendered as the same near-black icon - there was
+   no visible confirmation the click did anything. */
+#favoriteToggle[aria-pressed="true"] i {
+  color: var(--wv-color-warning);
+}
+
+#favoriteToggle[aria-pressed="true"]:hover {
+  background: var(--wv-color-warning-bg, rgba(245, 158, 11, 0.12));
+}
+
 /* Button Variants */
 .wv-btn {
   display: inline-flex;
@@ -1381,8 +1392,13 @@ body {
     padding: 0;
   }
 
+  .wv-toggle {
+    gap: var(--wv-space-2);
+  }
+
   .wv-toggle__label {
-    display: none;
+    font-size: var(--wv-text-xs);
+    min-width: 20px;
   }
 
   .wv-content {
@@ -2818,6 +2834,77 @@ body {
   text-align: center;
 }
 
+.wv-compare-form {
+  display: flex;
+  align-items: center;
+  gap: var(--wv-space-3);
+  margin-bottom: var(--wv-space-5);
+  flex-wrap: wrap;
+}
+
+.wv-compare-form__field {
+  flex: 1 1 200px;
+}
+
+.wv-compare-form__field .glass-input {
+  width: 100%;
+}
+
+.wv-compare-form__vs {
+  color: var(--wv-color-text-tertiary);
+  font-weight: var(--wv-font-weight-semibold);
+  font-size: var(--wv-text-sm);
+  text-transform: uppercase;
+}
+
+.wv-compare-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--wv-space-4);
+}
+
+.wv-compare-stats {
+  list-style: none;
+  margin: var(--wv-space-3) 0 0;
+  padding: var(--wv-space-3) 0 0;
+  border-top: 1px solid var(--wv-color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wv-space-2);
+}
+
+.wv-compare-stats li {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--wv-text-sm);
+}
+
+.wv-compare-stats span {
+  color: var(--wv-color-text-secondary);
+}
+
+.wv-compare-analysis {
+  list-style: none;
+  margin: var(--wv-space-4) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wv-space-2);
+}
+
+.wv-compare-analysis li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wv-space-2);
+  color: var(--wv-color-text-secondary);
+  font-size: var(--wv-text-sm);
+}
+
+.wv-compare-analysis i {
+  color: var(--wv-color-accent);
+  margin-top: 3px;
+}
+
 /* ========================================
  * 32. MAP PAGE
  * ======================================== */
@@ -3424,6 +3511,8 @@ body[data-page="map"] .wv-content {
   color: var(--wv-color-accent);
   z-index: var(--wv-z-sticky);
   transform: translateY(-60px);
+  opacity: 0;
+  transition: opacity 150ms ease;
   pointer-events: none;
 }
 
