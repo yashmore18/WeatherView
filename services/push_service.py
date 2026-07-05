@@ -70,6 +70,15 @@ def _get_vapid_keys() -> tuple:
     env_public = os.environ.get('VAPID_PUBLIC_KEY')
     env_private = os.environ.get('VAPID_PRIVATE_KEY')
     if env_public and env_private:
+        # Most host dashboards (Render included) only accept a single-line
+        # value, so the private key has to be pasted with literal "\n"
+        # two-character sequences standing in for real line breaks - PEM
+        # parsers require actual newlines, so unescape them back here
+        # rather than expecting whoever deploys this to get that right by
+        # hand. A value that already has real newlines (e.g. set via a
+        # provider that supports multi-line secrets) passes through
+        # unchanged, since there's nothing to unescape.
+        env_private = env_private.replace('\\n', '\n')
         return env_public, env_private
 
     if os.path.exists(_VAPID_KEY_PATH):
