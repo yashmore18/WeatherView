@@ -63,7 +63,21 @@ class WVShared {
 
         this.deferredInstallPrompt = null;
 
-        if (this.isStandalone() || localStorage.getItem('wv_installPromptDismissed') === 'true') {
+        // Already running as the installed app - never show, regardless of
+        // dismissal history (isStandalone() alone doesn't cover the moment
+        // right after install but before this tab's relaunched standalone,
+        // which is what wv_installed is for).
+        if (this.isStandalone() || localStorage.getItem('wv_installed') === 'true') {
+            return;
+        }
+
+        // A dismissal snoozes the prompt for 2 days rather than suppressing
+        // it forever - someone who says "not now" on day 1 may still want
+        // the reminder once they've used the app a bit more, but someone who
+        // dismisses it repeatedly won't be nagged every single reload either.
+        const dismissedAt = parseInt(localStorage.getItem('wv_installPromptDismissedAt') || '0', 10);
+        const snoozeMs = 2 * 24 * 60 * 60 * 1000;
+        if (dismissedAt && Date.now() - dismissedAt < snoozeMs) {
             return;
         }
 
@@ -81,19 +95,21 @@ class WVShared {
             this.deferredInstallPrompt.prompt();
             const { outcome } = await this.deferredInstallPrompt.userChoice;
             if (outcome === 'accepted') {
-                localStorage.setItem('wv_installPromptDismissed', 'true');
+                localStorage.setItem('wv_installed', 'true');
+            } else {
+                localStorage.setItem('wv_installPromptDismissedAt', Date.now().toString());
             }
             this.deferredInstallPrompt = null;
             banner.style.display = 'none';
         });
 
         dismissBtn.addEventListener('click', () => {
-            localStorage.setItem('wv_installPromptDismissed', 'true');
+            localStorage.setItem('wv_installPromptDismissedAt', Date.now().toString());
             banner.style.display = 'none';
         });
 
         window.addEventListener('appinstalled', () => {
-            localStorage.setItem('wv_installPromptDismissed', 'true');
+            localStorage.setItem('wv_installed', 'true');
             banner.style.display = 'none';
         });
     }
@@ -634,9 +650,16 @@ if ('serviceWorker' in navigator) {
     // as null to the stale JS. Reloading once when the new worker actually
     // takes control (which only happens after it's fully installed) puts
     // both HTML and assets back on the same version immediately.
+    // controllerchange also fires the very first time any service worker
+    // claims an already-loaded page (clients.claim() in sw.js) - on a
+    // genuinely first-ever visit there's no stale cache to fix, so without
+    // this guard every new visitor's page silently reloaded itself once for
+    // no reason. Only reload when a *different* worker was already in
+    // control (a real update), not when there was none before.
     let refreshingForNewWorker = false;
+    const hadExistingController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (refreshingForNewWorker) return;
+        if (!hadExistingController || refreshingForNewWorker) return;
         refreshingForNewWorker = true;
         window.location.reload();
     });

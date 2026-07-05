@@ -6,13 +6,21 @@ class LocationsPage {
     constructor(wv) {
         this.wv = wv;
         this.lastCompare = null;
+        // Set only when the user picks a specific suggestion from the
+        // dropdown (lat/lon), not just typed text - lets the compare fetch
+        // that exact place instead of re-searching by name, which matters
+        // most for small/local towns where a plain name is ambiguous.
+        this.selectionA = null;
+        this.selectionB = null;
         this.setupEventListeners();
         this.renderFavorites();
+        this.setupCompareAutocomplete('compareCityA', 'compareDropdownA', 'A');
+        this.setupCompareAutocomplete('compareCityB', 'compareDropdownB', 'B');
         this.prefillCompareForm();
 
         document.addEventListener('wv:favoriteschange', () => this.renderFavorites());
         document.addEventListener('wv:unitschange', () => {
-            if (this.lastCompare) this.runCompare(this.lastCompare.cityA, this.lastCompare.cityB);
+            if (this.lastCompare) this.runCompare(this.lastCompare.locA, this.lastCompare.locB);
         });
         // Searching from this page still adds the searched city to favorites
         // in place - it doesn't navigate away, since favorites/comparison are
@@ -33,11 +41,79 @@ class LocationsPage {
         if (compareForm) {
             compareForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const cityA = document.getElementById('compareCityA').value.trim();
-                const cityB = document.getElementById('compareCityB').value.trim();
-                if (cityA && cityB) this.runCompare(cityA, cityB);
+                const inputA = document.getElementById('compareCityA').value.trim();
+                const inputB = document.getElementById('compareCityB').value.trim();
+                const locA = this.selectionA || inputA;
+                const locB = this.selectionB || inputB;
+                if (inputA && inputB) this.runCompare(locA, locB);
             });
         }
+    }
+
+    // Small, self-contained autocomplete (debounced search -> dropdown ->
+    // pick) wired to one compare input at a time - mirrors the header
+    // search's behavior/API (/api/locations/search) without depending on
+    // its fixed element IDs, since this page needs two independent instances.
+    setupCompareAutocomplete(inputId, dropdownId, slot) {
+        const input = document.getElementById(inputId);
+        const dropdown = document.getElementById(dropdownId);
+        if (!input || !dropdown) return;
+        let debounceTimer = null;
+
+        input.addEventListener('input', () => {
+            this[`selection${slot}`] = null;
+            clearTimeout(debounceTimer);
+            const query = input.value.trim();
+            if (query.length < 2) {
+                dropdown.classList.remove('show');
+                dropdown.innerHTML = '';
+                return;
+            }
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/api/locations/search?q=${encodeURIComponent(query)}`);
+                    if (!response.ok) throw new Error('Search failed');
+                    const locations = await response.json();
+                    this.renderCompareDropdown(dropdown, locations, slot);
+                } catch (error) {
+                    dropdown.classList.remove('show');
+                }
+            }, 300);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest(`#${inputId}`) && !e.target.closest(`#${dropdownId}`)) {
+                dropdown.classList.remove('show');
+            }
+        });
+    }
+
+    renderCompareDropdown(dropdown, locations, slot) {
+        if (!locations || locations.length === 0) {
+            dropdown.innerHTML = `<div class="wv-search__no-results"><i class="fas fa-map-marker-alt" aria-hidden="true"></i><span>No locations found</span></div>`;
+            dropdown.classList.add('show');
+            return;
+        }
+        dropdown.innerHTML = locations.map((loc, i) => `
+            <button class="dropdown-item" type="button" data-index="${i}">
+                <div>
+                    <div class="fw-semibold">${this.wv.escapeHtml(loc.name)}</div>
+                    <small>${this.wv.escapeHtml(loc.state)} ${this.wv.escapeHtml(loc.country)}</small>
+                </div>
+                <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+            </button>
+        `).join('');
+        dropdown.classList.add('show');
+
+        dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const loc = locations[parseInt(item.dataset.index, 10)];
+                const inputId = slot === 'A' ? 'compareCityA' : 'compareCityB';
+                document.getElementById(inputId).value = loc.display_name;
+                this[`selection${slot}`] = { lat: loc.lat, lon: loc.lon, name: loc.display_name };
+                dropdown.classList.remove('show');
+            });
+        });
     }
 
     // If the user already has favorites, comparing the first two of them
@@ -107,12 +183,17 @@ class LocationsPage {
         });
     }
 
-    async runCompare(cityA, cityB) {
+    // locA/locB accept either a plain city name (string, typed with no
+    // suggestion picked) or a { lat, lon, name } object (a specific
+    // suggestion was picked) - the latter fetches that exact place instead
+    // of re-searching by name, which matters for disambiguating small/local
+    // towns that share a name with somewhere bigger.
+    async runCompare(locA, locB) {
         const result = document.getElementById('compareResult');
         const submitBtn = document.getElementById('compareSubmit');
         if (!result) return;
 
-        this.lastCompare = { cityA, cityB };
+        this.lastCompare = { locA, locB };
         if (submitBtn) submitBtn.disabled = true;
         result.innerHTML = `
             <div class="wv-compare-columns">
@@ -129,9 +210,12 @@ class LocationsPage {
 
         try {
             const units = this.wv.currentUnits;
+            const toParams = (loc) => typeof loc === 'string'
+                ? { city: loc, units }
+                : { lat: loc.lat, lon: loc.lon, units };
             const [dataA, dataB] = await Promise.all([
-                this.wv.fetchCurrentWeather({ city: cityA, units }),
-                this.wv.fetchCurrentWeather({ city: cityB, units })
+                this.wv.fetchCurrentWeather(toParams(locA)),
+                this.wv.fetchCurrentWeather(toParams(locB))
             ]);
             const [aqiA, aqiB] = await Promise.all([
                 this.wv.fetchAirQuality(dataA.lat, dataA.lon).catch(() => null),

@@ -26,12 +26,14 @@
         <form id="compareForm" class="wv-compare-form" autocomplete="off">
             <div class="wv-compare-form__field">
                 <label for="compareCityA" class="sr-only">First city</label>
-                <input type="text" id="compareCityA" class="glass-input" placeholder="e.g. London" required>
+                <input type="text" id="compareCityA" class="glass-input" placeholder="e.g. London" autocomplete="off" required>
+                <div id="compareDropdownA" class="wv-search__dropdown glass-dropdown" role="listbox" aria-label="First city suggestions"></div>
             </div>
             <span class="wv-compare-form__vs" aria-hidden="true">vs</span>
             <div class="wv-compare-form__field">
                 <label for="compareCityB" class="sr-only">Second city</label>
-                <input type="text" id="compareCityB" class="glass-input" placeholder="e.g. Paris" required>
+                <input type="text" id="compareCityB" class="glass-input" placeholder="e.g. Paris" autocomplete="off" required>
+                <div id="compareDropdownB" class="wv-search__dropdown glass-dropdown" role="listbox" aria-label="Second city suggestions"></div>
             </div>
             <button type="submit" class="wv-btn wv-btn--primary" id="compareSubmit">
                 <i class="fas fa-balance-scale" aria-hidden="true"></i>

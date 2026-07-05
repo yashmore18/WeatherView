@@ -2844,6 +2844,7 @@ body {
 
 .wv-compare-form__field {
   flex: 1 1 200px;
+  position: relative;
 }
 
 .wv-compare-form__field .glass-input {
@@ -2985,7 +2986,23 @@ body[data-page="map"] .wv-content {
     left: var(--wv-space-4);
     right: var(--wv-space-4);
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    gap: var(--wv-space-1);
+    padding: var(--wv-space-1);
+  }
+
+  /* Desktop's column layout left-aligns icon+label pairs of varying width
+     (justify-content:flex-start), which on mobile - once the label is
+     hidden - left the active pill-shaped button full-width while the three
+     icon-only buttons collapsed to tiny, inconsistently-sized squares next
+     to it. Every button gets equal width and a centered icon instead, so
+     the row reads as one deliberate segmented control. */
+  .wv-map-layer-btn {
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+    padding: 0;
+    height: 44px;
   }
 
   .wv-map-layer-btn span {

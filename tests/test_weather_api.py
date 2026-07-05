@@ -50,21 +50,30 @@ class TestWeatherAPI:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = mock_response_data
-        mock_get.return_value = mock_response
+
+        # get_current_weather makes a second, best-effort call to the
+        # Geocoding API's reverse endpoint to fill in a state/region (the
+        # /weather endpoint has no such field at all).
+        mock_geo_response = Mock()
+        mock_geo_response.status_code = 200
+        mock_geo_response.json.return_value = [{'name': 'London', 'state': 'England', 'country': 'GB'}]
+
+        mock_get.side_effect = [mock_response, mock_geo_response]
 
         # Test the request
         result = self.weather_api.get_current_weather(q='London', units='metric')
-        
+
         # Verify the request was made correctly
-        mock_get.assert_called_once()
-        args, kwargs = mock_get.call_args
+        assert mock_get.call_count == 2
+        args, kwargs = mock_get.call_args_list[0]
         assert 'weather' in args[0]
         assert kwargs['params']['appid'] == 'test_api_key'
         assert kwargs['params']['q'] == 'London'
         assert kwargs['params']['units'] == 'metric'
-        
+
         # Verify the response mapping
         assert result['city'] == 'London'
+        assert result['state'] == 'England'
         assert result['country'] == 'GB'
         assert result['temp'] == 15.5
         assert result['temp_unit'] == '°C'
@@ -106,12 +115,17 @@ class TestWeatherAPI:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = mock_response_data
-        mock_get.return_value = mock_response
-        
+
+        mock_geo_response = Mock()
+        mock_geo_response.status_code = 200
+        mock_geo_response.json.return_value = [{'name': 'New York', 'state': 'New York', 'country': 'US'}]
+
+        mock_get.side_effect = [mock_response, mock_geo_response]
+
         result = self.weather_api.get_current_weather(lat=40.7128, lon=-74.0060, units='imperial')
-        
+
         # Verify request parameters
-        args, kwargs = mock_get.call_args
+        args, kwargs = mock_get.call_args_list[0]
         assert kwargs['params']['lat'] == str(40.7128)
         assert kwargs['params']['lon'] == str(-74.0060)
         assert kwargs['params']['units'] == 'imperial'

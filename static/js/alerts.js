@@ -20,6 +20,26 @@ function formatCityLocalTime(unixSeconds, timezoneOffsetSeconds = 0) {
     });
 }
 
+// A bare clock time ("5:00 PM") with no date context reads as nonsensical
+// once the target instant crosses into a different calendar day than "now"
+// - e.g. "clearing around 5:00 PM" shown to someone whose city-local time is
+// already 6:26 PM looks like it's in the past, when it's actually tomorrow
+// afternoon. Comparing the two instants' calendar day *in the city's own
+// shifted timezone* (not the browser's) decides whether to qualify the time
+// with "today"/"tomorrow"/a weekday name.
+function formatCityLocalMoment(unixSeconds, nowSeconds, timezoneOffsetSeconds = 0) {
+    const shiftedTarget = new Date((unixSeconds + timezoneOffsetSeconds) * 1000);
+    const shiftedNow = new Date((nowSeconds + timezoneOffsetSeconds) * 1000);
+    const dayDiff = Math.round((Date.UTC(shiftedTarget.getUTCFullYear(), shiftedTarget.getUTCMonth(), shiftedTarget.getUTCDate())
+        - Date.UTC(shiftedNow.getUTCFullYear(), shiftedNow.getUTCMonth(), shiftedNow.getUTCDate())) / 86400000);
+
+    const time = formatCityLocalTime(unixSeconds, timezoneOffsetSeconds);
+    if (dayDiff <= 0) return time;
+    if (dayDiff === 1) return `tomorrow at ${time}`;
+    const weekday = shiftedTarget.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+    return `${weekday} at ${time}`;
+}
+
 // "141 minutes" reads as noise - round to the nearest 5 minutes and render
 // as hours+minutes, dropping whichever unit is zero.
 function formatDuration(totalMinutes) {
@@ -75,7 +95,7 @@ function checkRainEnding(currentWeather, forecast) {
         ? 'Rain should clear up within the hour.'
         : minutes <= 150
             ? `Rain should let up in about ${formatDuration(minutes)}.`
-            : `Rain is expected to continue for a few more hours, clearing around ${formatCityLocalTime(clearsAt.dt, forecast.timezone_offset)}.`;
+            : `Rain is expected to continue for a while, clearing ${formatCityLocalMoment(clearsAt.dt, nowTs, forecast.timezone_offset)}.`;
 
     return {
         id: 'rain-ending',
@@ -185,4 +205,4 @@ function computeAlerts(currentWeather, forecast, airQuality, prefs = {}, units =
     return alerts;
 }
 
-window.WVAlerts = { computeAlerts, checkRainSoon, checkRainEnding, checkAqiSpike, checkTempSwing, checkGoodWeather, formatDuration, formatCityLocalTime };
+window.WVAlerts = { computeAlerts, checkRainSoon, checkRainEnding, checkAqiSpike, checkTempSwing, checkGoodWeather, formatDuration, formatCityLocalTime, formatCityLocalMoment };

@@ -55,6 +55,30 @@ class WeatherAPI:
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Network error: {str(e)}")
     
+    def reverse_geocode(self, lat: float, lon: float) -> Optional[Dict[str, Any]]:
+        """Look up the state/region for a coordinate via OWM's Geocoding API.
+
+        The plain /weather endpoint's bundled place name is picked from
+        OpenWeatherMap's weather-station database, which has no state/region
+        field at all - two identically-named towns in different states are
+        otherwise indistinguishable in the UI. Best-effort only: any failure
+        here shouldn't break the weather response itself, just leave the
+        state blank like before.
+        """
+        try:
+            response = self._session.get(
+                f"{self.GEO_URL}/reverse",
+                params={'lat': lat, 'lon': lon, 'limit': 1, 'appid': self.api_key},
+                timeout=5,
+            )
+            if response.status_code != 200:
+                return None
+            results = response.json()
+            return results[0] if results else None
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Reverse geocoding failed: {str(e)}")
+            return None
+
     def search_locations(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
         """Search for locations using OpenWeatherMap's geocoding API."""
         params = {
@@ -194,17 +218,21 @@ class WeatherAPI:
             raise ValueError("Either city name (q) or coordinates (lat, lon) must be provided")
         
         data = self._make_request('weather', params)
-        
+
         # Map to internal contract
         timezone_offset = data.get('timezone', 0)
         current_time = self._convert_timestamp(data['dt'], timezone_offset)
-        
+
         # Determine unit symbols
         temp_unit = '°C' if units == 'metric' else '°F'
         wind_unit = 'm/s' if units == 'metric' else 'mph'
-        
+
+        reverse = self.reverse_geocode(data['coord']['lat'], data['coord']['lon'])
+        state = reverse.get('state', '') if reverse else ''
+
         return {
             'city': data['name'],
+            'state': state,
             'country': data['sys']['country'],
             'local_time_iso': current_time,
             'timezone_offset': timezone_offset,
