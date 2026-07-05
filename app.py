@@ -12,6 +12,7 @@ from flask_limiter.util import get_remote_address
 from services.weather_api import WeatherAPI
 from services.cache import Cache
 from services.rate_limiter import RateLimiter
+from services import push_service
 
 
 # Configure logging
@@ -482,6 +483,74 @@ def get_air_quality():
     except Exception as e:
         logger.error(f"Error fetching air quality: {str(e)}")
         return jsonify({'error': 'Failed to fetch air quality data'}), 500
+
+@app.route('/api/push/vapid-public-key')
+def push_vapid_public_key():
+    """The browser needs this to call pushManager.subscribe() - it's public
+    by design (identifies our server to push services), unlike the private
+    key which never leaves this process."""
+    return jsonify({'publicKey': push_service.VAPID_PUBLIC_KEY})
+
+@app.route('/api/push/subscribe', methods=['POST'])
+def push_subscribe():
+    """Stores a browser's push subscription plus the location to watch for
+    abrupt weather changes. No account/auth - the subscription's own
+    endpoint+keys are the only credential, same trust model as any other
+    Web Push integration."""
+    try:
+        data = request.get_json(silent=True) or {}
+        subscription = data.get('subscription')
+        lat = data.get('lat')
+        lon = data.get('lon')
+        city = data.get('city')
+        units = data.get('units', 'metric')
+
+        if not subscription or not subscription.get('endpoint') or lat is None or lon is None:
+            return jsonify({'error': 'subscription and lat/lon are required'}), 400
+        if units not in ALLOWED_UNITS:
+            return jsonify({'error': "units must be 'metric' or 'imperial'"}), 400
+
+        try:
+            lat_f, lon_f = float(lat), float(lon)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Invalid latitude or longitude'}), 400
+        if not (-90 <= lat_f <= 90) or not (-180 <= lon_f <= 180):
+            return jsonify({'error': 'Invalid latitude or longitude'}), 400
+
+        push_service.save_subscription(subscription, city, lat_f, lon_f, units)
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        logger.error(f"Error saving push subscription: {str(e)}")
+        return jsonify({'error': 'Failed to save subscription'}), 500
+
+@app.route('/api/push/unsubscribe', methods=['POST'])
+def push_unsubscribe():
+    """Removes a subscription - called when the user turns the toggle off,
+    or the browser reports the old subscription is no longer valid."""
+    try:
+        data = request.get_json(silent=True) or {}
+        endpoint = data.get('endpoint')
+        if not endpoint:
+            return jsonify({'error': 'endpoint is required'}), 400
+        push_service.remove_subscription(endpoint)
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        logger.error(f"Error removing push subscription: {str(e)}")
+        return jsonify({'error': 'Failed to remove subscription'}), 500
+
+@app.route('/api/push/check')
+def push_check():
+    """Not a persistent background worker - Render's free tier has no long-
+    running process to host one - this is instead meant to be hit every
+    10-15 minutes by the same external scheduler (cron-job.org/UptimeRobot)
+    already pinging /healthz to keep the app awake. Gated by a shared-secret
+    token so it can't be triggered by arbitrary traffic that discovers the
+    URL (see services/push_service.py for how the token is provisioned)."""
+    token = request.args.get('token')
+    if token != push_service.CHECK_TOKEN:
+        abort(404)
+    notified = push_service.check_all_subscriptions(weather_api)
+    return jsonify({'status': 'ok', 'notified': notified})
 
 @app.errorhandler(404)
 def not_found(error):

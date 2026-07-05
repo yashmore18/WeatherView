@@ -116,11 +116,20 @@
                     </label>
                 </div>
             </div>
-            <div class="wv-settings-row wv-settings-row--note">
-                <p class="wv-settings-row__hint">
-                    <i class="fas fa-bell-slash" aria-hidden="true"></i>
-                    Push notifications: coming soon.
-                </p>
+            <div class="wv-settings-row">
+                <div>
+                    <p class="wv-settings-row__label">Push notifications</p>
+                    <p class="wv-settings-row__hint" id="pushHint">
+                        Get notified on abrupt changes (rain starting/stopping, sharp temperature
+                        swings, thunderstorms) for your last-searched city - even when the app is closed.
+                    </p>
+                </div>
+                <div class="wv-toggle" role="group" aria-label="Push notifications">
+                    <label class="wv-toggle__switch" for="pushToggle">
+                        <input type="checkbox" id="pushToggle" class="wv-toggle__input" aria-label="Toggle push notifications">
+                        <span class="wv-toggle__slider" aria-hidden="true"></span>
+                    </label>
+                </div>
             </div>
         </div>
     </section>
@@ -128,5 +137,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/push-notifications.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pages/settings.js') }}"></script>
 {% endblock %}

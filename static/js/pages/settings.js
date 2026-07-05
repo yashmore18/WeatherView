@@ -10,6 +10,56 @@ class SettingsPage {
         this.setupThemeToggle();
         this.setupAlertPrefs();
         this.setupProfileName();
+        this.setupPushToggle();
+    }
+
+    async setupPushToggle() {
+        const toggle = document.getElementById('pushToggle');
+        const hint = document.getElementById('pushHint');
+        if (!toggle) return;
+
+        if (!window.WVPush || !window.WVPush.isSupported()) {
+            toggle.disabled = true;
+            if (hint) hint.textContent = 'Push notifications are not supported in this browser.';
+            return;
+        }
+
+        try {
+            const existing = await window.WVPush.getCurrentSubscription();
+            toggle.checked = !!existing;
+        } catch {
+            toggle.checked = false;
+        }
+
+        toggle.addEventListener('change', async (e) => {
+            const wantsOn = e.target.checked;
+            toggle.disabled = true;
+            try {
+                if (wantsOn) {
+                    const resolved = this.wv.getResolvedCity();
+                    if (!resolved) {
+                        throw new Error('Search a city first, then turn this on to watch it for abrupt changes.');
+                    }
+                    // Push subscriptions are watched by lat/lon server-side,
+                    // so a plain city name needs resolving to coordinates
+                    // (and its canonical display name) first.
+                    const params = resolved.city
+                        ? { city: resolved.city, units: this.wv.currentUnits }
+                        : { lat: resolved.lat, lon: resolved.lon, units: this.wv.currentUnits };
+                    const data = await this.wv.fetchCurrentWeather(params);
+                    await window.WVPush.subscribe({ city: data.city, lat: data.lat, lon: data.lon }, this.wv.currentUnits);
+                    this.wv.showSuccess(`Watching ${data.city} for abrupt weather changes`);
+                } else {
+                    await window.WVPush.unsubscribe();
+                    this.wv.showSuccess('Push notifications turned off');
+                }
+            } catch (error) {
+                toggle.checked = !wantsOn;
+                this.wv.showError(error.message);
+            } finally {
+                toggle.disabled = false;
+            }
+        });
     }
 
     setupProfileName() {

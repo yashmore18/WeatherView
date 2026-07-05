@@ -1,5 +1,5 @@
 // Service Worker for WeatherView PWA
-const CACHE_NAME = 'yash-weather-app-v16';
+const CACHE_NAME = 'yash-weather-app-v17';
 const STATIC_CACHE_URLS = [
   '/',
   '/ai-summary',
@@ -19,6 +19,7 @@ const STATIC_CACHE_URLS = [
   '/static/js/compare-insights.js',
   '/static/js/hourly-interpolate.js',
   '/static/js/ai-summary-engine.js',
+  '/static/js/push-notifications.js',
   '/static/js/pages/today.js',
   '/static/js/pages/ai-summary.js',
   '/static/js/pages/forecast.js',
@@ -262,30 +263,27 @@ self.addEventListener('sync', event => {
   }
 });
 
-// Handle push notifications (future enhancement)
+// Smart weather push - sent by services/push_service.py's periodic check
+// (see app.py's /api/push/check) only for abrupt changes worth surfacing
+// (rain starting/stopping, sharp temperature swings, thunderstorms), not on
+// every routine update, so payload shape is { title, body, tag }.
 self.addEventListener('push', event => {
-  console.log('[SW] Push event received');
-  
-  if (event.data) {
-    const data = event.data.json();
-    const options = {
-      body: data.body || 'Weather update available',
-      icon: '/static/icons/icon-192.png',
-      badge: '/static/icons/icon-192.png',
-      tag: 'weather-notification',
-      requireInteraction: false,
-      actions: [
-        {
-          action: 'view',
-          title: 'View Weather'
-        }
-      ]
-    };
-    
-    event.waitUntil(
-      self.registration.showNotification(data.title || 'Weather App', options)
-    );
-  }
+  if (!event.data) return;
+  const data = event.data.json();
+  const options = {
+    body: data.body || 'Weather update available',
+    icon: '/static/icons/icon-192.png',
+    badge: '/static/icons/icon-192.png',
+    tag: data.tag || 'weather-alert',
+    requireInteraction: false,
+    actions: [
+      { action: 'view', title: 'View Weather' }
+    ]
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'WeatherView', options)
+  );
 });
 
 // Handle notification clicks

@@ -4,3 +4,4 @@ gunicorn
 python-dotenv
 pytest
 flask-limiter
+pywebpush
