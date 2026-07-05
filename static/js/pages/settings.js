@@ -10,8 +10,24 @@ class SettingsPage {
         this.setupThemeToggle();
         this.setupAlertPrefs();
         this.setupProfileName();
+        this.setupAiPrefs();
         this.setupPushToggle();
         this.setupClearCache();
+    }
+
+    setupAiPrefs() {
+        const select = document.getElementById('aiSensitivitySelect');
+        if (!select) return;
+
+        let prefs = {};
+        try { prefs = JSON.parse(localStorage.getItem('wv_aiPrefs') || '{}'); } catch { /* ignore */ }
+        select.value = prefs.sensitivity || 'none';
+
+        select.addEventListener('change', () => {
+            localStorage.setItem('wv_aiPrefs', JSON.stringify({ sensitivity: select.value }));
+            localStorage.setItem('wv_aiPrefsPrompted', 'true');
+            this.wv.showSuccess('AI Summary personalization updated');
+        });
     }
 
     setupClearCache() {

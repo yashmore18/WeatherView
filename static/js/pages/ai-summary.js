@@ -58,6 +58,7 @@ class AiSummaryPage {
 
             const summary = window.WVAISummary.generateSummary(current, forecast, airQuality, alerts, this.wv.currentUnits);
             this.render(summary);
+            this.maybeShowPrefsPrompt();
         } catch (error) {
             this.wv.showError(error.message);
             if (emptyState) emptyState.style.display = 'flex';
@@ -97,8 +98,19 @@ class AiSummaryPage {
             <p class="wv-ai-summary__paragraph" style="animation-delay: ${300 + i * 220}ms">${this.wv.escapeHtml(p)}</p>
         `).join('');
 
+        const recDelay = 300 + summary.paragraphs.length * 220;
+        const recsEl = document.getElementById('aiSummaryRecommendations');
+        if (recsEl) {
+            recsEl.innerHTML = summary.recommendations.map((r, i) => `
+                <div class="wv-ai-summary__rec" style="animation-delay: ${recDelay + i * 120}ms" title="${this.wv.escapeHtml(r.text)}">
+                    <span class="wv-ai-summary__rec-icon" aria-hidden="true"><i class="fas ${r.icon}"></i></span>
+                    <span class="wv-ai-summary__rec-label">${this.wv.escapeHtml(r.label)}</span>
+                </div>
+            `).join('');
+        }
+
         const statsEl = document.getElementById('aiSummaryStats');
-        const statsDelay = 300 + summary.paragraphs.length * 220;
+        const statsDelay = recDelay + summary.recommendations.length * 120;
         statsEl.innerHTML = summary.stats.map((s, i) => `
             <div class="wv-ai-summary__stat" style="animation-delay: ${statsDelay + i * 100}ms">
                 <span class="wv-ai-summary__stat-value">${this.wv.escapeHtml(s.value)}</span>
@@ -107,6 +119,32 @@ class AiSummaryPage {
         `).join('');
 
         this.renderChart(summary.chart, statsDelay + summary.stats.length * 100 + 200);
+    }
+
+    // A short, skippable, one-time (re-editable from Settings) prompt so the
+    // summary's comfort/recommendation thresholds can reflect the reader
+    // instead of one fixed baseline - the "self-learning" input the page
+    // otherwise has no way to gather. Never blocks the summary itself.
+    maybeShowPrefsPrompt() {
+        if (localStorage.getItem('wv_aiPrefsPrompted')) return;
+        const prompt = document.getElementById('aiSummaryPrefsPrompt');
+        if (!prompt) return;
+        prompt.style.display = 'flex';
+
+        const save = (sensitivity) => {
+            localStorage.setItem('wv_aiPrefs', JSON.stringify({ sensitivity }));
+            localStorage.setItem('wv_aiPrefsPrompted', 'true');
+            prompt.style.display = 'none';
+            this.refresh();
+        };
+        prompt.querySelectorAll('[data-sensitivity]').forEach(btn => {
+            btn.addEventListener('click', () => save(btn.dataset.sensitivity), { once: true });
+        });
+        const skip = prompt.querySelector('[data-skip]');
+        if (skip) skip.addEventListener('click', () => {
+            localStorage.setItem('wv_aiPrefsPrompted', 'true');
+            prompt.style.display = 'none';
+        }, { once: true });
     }
 
     renderChart(chartData, revealDelayMs) {

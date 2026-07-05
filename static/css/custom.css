@@ -4199,6 +4199,54 @@ body[data-page="map"] .wv-content {
   animation: wv-ai-text-fade-in 600ms ease-out forwards;
 }
 
+.wv-ai-summary__recommendations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wv-space-2);
+  margin-bottom: var(--wv-space-5);
+}
+
+.wv-ai-summary__rec {
+  display: flex;
+  align-items: center;
+  gap: var(--wv-space-2);
+  padding: var(--wv-space-2) var(--wv-space-3);
+  border-radius: var(--wv-radius-full);
+  background: var(--wv-color-accent-light);
+  border: 1px solid var(--wv-color-border);
+  font-size: var(--wv-text-sm);
+  font-weight: var(--wv-font-weight-medium);
+  color: var(--wv-color-text-primary);
+  opacity: 0;
+  animation: wv-ai-text-fade-in 500ms ease-out forwards;
+}
+
+.wv-ai-summary__rec-icon {
+  color: var(--wv-color-accent);
+}
+
+.wv-ai-summary__prefs-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wv-space-3);
+  padding: var(--wv-space-4);
+  margin-bottom: var(--wv-space-4);
+}
+
+.wv-ai-summary__prefs-question {
+  margin: 0;
+  color: var(--wv-color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--wv-space-2);
+}
+
+.wv-ai-summary__prefs-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wv-space-2);
+}
+
 .wv-ai-summary__stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -4250,6 +4298,7 @@ body[data-page="map"] .wv-content {
   .wv-ai-summary__glow,
   .wv-ai-fade-in,
   .wv-ai-summary__paragraph,
+  .wv-ai-summary__rec,
   .wv-ai-summary__stat {
     animation: none !important;
     opacity: 1 !important;

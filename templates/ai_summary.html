@@ -26,9 +26,23 @@
             <div class="wv-ai-summary__confidence" id="aiSummaryConfidence"></div>
             <h3 id="aiSummaryHeadline" class="wv-ai-summary__headline"></h3>
             <div id="aiSummaryParagraphs" class="wv-ai-summary__paragraphs"></div>
+            <div id="aiSummaryRecommendations" class="wv-ai-summary__recommendations" role="list" aria-label="Recommendations"></div>
             <div id="aiSummaryStats" class="wv-ai-summary__stats"></div>
             <div class="wv-ai-summary__chart-wrap">
                 <canvas id="aiSummaryChart" aria-label="Upcoming temperature trend" role="img"></canvas>
+            </div>
+        </div>
+
+        <div id="aiSummaryPrefsPrompt" class="wv-ai-summary__prefs-prompt glass-card" style="display: none;" role="region" aria-label="Personalize your summary">
+            <p class="wv-ai-summary__prefs-question">
+                <i class="fas fa-sliders" aria-hidden="true"></i>
+                Do you tend to run warm or run cold? This tunes comfort calls and recommendations for you.
+            </p>
+            <div class="wv-ai-summary__prefs-actions">
+                <button type="button" class="wv-btn wv-btn--secondary wv-btn--sm" data-sensitivity="heat">I run warm</button>
+                <button type="button" class="wv-btn wv-btn--secondary wv-btn--sm" data-sensitivity="cold">I run cold</button>
+                <button type="button" class="wv-btn wv-btn--secondary wv-btn--sm" data-sensitivity="none">Neither</button>
+                <button type="button" class="wv-btn wv-btn--ghost wv-btn--sm" data-skip>Skip</button>
             </div>
         </div>
 

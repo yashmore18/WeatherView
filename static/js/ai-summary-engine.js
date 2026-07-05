@@ -10,10 +10,18 @@
  * together themselves from separate pages.
  */
 
-function comfortDescriptor(temp, humidity, windSpeed, units) {
-    const idealMin = units === 'imperial' ? 60 : 16;
-    const idealMax = units === 'imperial' ? 77 : 25;
+// Reads the lightweight, locally-stored personalization signal (see
+// getUserPrefs() below) so comfort/recommendation thresholds can shift a
+// little for someone who's told us they run hot or cold, instead of
+// applying one fixed threshold to everyone.
+function comfortDescriptor(temp, humidity, windSpeed, units, prefs = {}) {
+    let idealMin = units === 'imperial' ? 60 : 16;
+    let idealMax = units === 'imperial' ? 77 : 25;
     const windCalmMax = units === 'imperial' ? 11 : 5;
+    const shift = units === 'imperial' ? 5 : 3;
+
+    if (prefs.sensitivity === 'heat') idealMax -= shift;
+    if (prefs.sensitivity === 'cold') idealMin += shift;
 
     if (temp < idealMin - 8 || temp > idealMax + 10) return 'extreme';
     if (temp < idealMin || temp > idealMax) return 'uncomfortable';
@@ -21,13 +29,25 @@ function comfortDescriptor(temp, humidity, windSpeed, units) {
     return 'pleasant';
 }
 
-function buildHeadline(current, units) {
+// The one-time (editable) personalization signal, set from a short inline
+// prompt on the AI Summary page and reusable from Settings. Deliberately
+// small - a sensitivity leaning and whether outdoor plans are likely - so it
+// stays genuinely quick to answer instead of turning into a form.
+function getUserPrefs() {
+    try {
+        return JSON.parse(localStorage.getItem('wv_aiPrefs') || '{}');
+    } catch {
+        return {};
+    }
+}
+
+function buildHeadline(current, units, prefs = {}) {
     const tempUnit = units === 'imperial' ? '°F' : '°C';
-    const comfort = comfortDescriptor(current.temp, current.humidity, current.wind_speed, units);
+    const comfort = comfortDescriptor(current.temp, current.humidity, current.wind_speed, units, prefs);
     return `${current.city} is ${current.description.toLowerCase()} at ${Math.round(current.temp)}${tempUnit} right now - conditions feel ${comfort}.`;
 }
 
-function buildParagraphs(current, forecast, airQuality, alerts, units) {
+function buildParagraphs(current, forecast, airQuality, alerts, units, prefs = {}) {
     const tempUnit = units === 'imperial' ? '°F' : '°C';
     const paragraphs = [];
 
@@ -75,12 +95,14 @@ function buildParagraphs(current, forecast, airQuality, alerts, units) {
     }
 
     // Closing recommendation - the one-line "so what should I do" takeaway.
-    const comfort = comfortDescriptor(current.temp, current.humidity, current.wind_speed, units);
+    const comfort = comfortDescriptor(current.temp, current.humidity, current.wind_speed, units, prefs);
     const rainy = /^(09|10|11)/.test(current.icon || '');
     if (rainy) {
         paragraphs.push(`Recommendation: keep an umbrella handy and plan indoor alternatives where you can.`);
     } else if (comfort === 'pleasant') {
-        paragraphs.push(`Recommendation: a genuinely good window to be outside today.`);
+        paragraphs.push(prefs.outdoorPlans === false
+            ? `Recommendation: a genuinely good window to be outside today, if your plans change.`
+            : `Recommendation: a genuinely good window to be outside today.`);
     } else if (comfort === 'extreme') {
         paragraphs.push(`Recommendation: limit time outdoors if possible - conditions are at an extreme today.`);
     } else {
@@ -88,6 +110,46 @@ function buildParagraphs(current, forecast, airQuality, alerts, units) {
     }
 
     return paragraphs;
+}
+
+// Concrete, visual action items (icon + short label) rather than prose -
+// the "carry an umbrella" / "wear sunscreen" / "stay indoors" style
+// call-outs the app should surface, tailored a little by comfort and, where
+// set, the user's own sensitivity/outdoor-plans preference.
+function buildRecommendations(current, forecast, airQuality, alerts, units, prefs = {}) {
+    const recs = [];
+    const icon = current.icon || '';
+    const rainy = /^(09|10|11)/.test(icon);
+    const snowy = /^13/.test(icon);
+    const clearOrFewClouds = /^(01|02)d$/.test(icon);
+    const comfort = comfortDescriptor(current.temp, current.humidity, current.wind_speed, units, prefs);
+    const hotThreshold = units === 'imperial' ? 75 : 24;
+    const coldThreshold = units === 'imperial' ? 41 : 5;
+    const windyThreshold = units === 'imperial' ? 22 : 10;
+
+    const upcomingRain = (forecast?.hourly_forecast || []).slice(0, 6).some(h => (h.pop || 0) >= 0.4);
+    if (rainy || upcomingRain) {
+        recs.push({ icon: 'fa-umbrella', label: 'Bring an umbrella', text: rainy ? 'It\'s raining now.' : 'Rain likely in the next few hours.' });
+    }
+    if (clearOrFewClouds && current.temp >= hotThreshold) {
+        recs.push({ icon: 'fa-sun', label: 'Wear sunscreen', text: 'Strong, direct sun with warm temperatures.' });
+    }
+    if (snowy || current.temp <= coldThreshold) {
+        recs.push({ icon: 'fa-mitten', label: 'Bundle up', text: snowy ? 'Snow is falling.' : 'Cold enough for a warm layer.' });
+    }
+    if (current.wind_speed >= windyThreshold) {
+        recs.push({ icon: 'fa-wind', label: 'Secure loose items', text: 'Wind is strong enough to matter outdoors.' });
+    }
+    const severeAlert = (alerts || []).some(a => a.severity === 'high' || a.severity === 'severe');
+    if (comfort === 'extreme' || severeAlert || (airQuality?.aqi >= 4)) {
+        recs.push({ icon: 'fa-house', label: 'Best to stay indoors', text: severeAlert ? 'An active severe alert is in effect.' : (airQuality?.aqi >= 4 ? 'Air quality is poor today.' : 'Conditions are at an extreme today.') });
+    } else if (airQuality?.aqi === 3) {
+        recs.push({ icon: 'fa-lungs', label: 'Limit prolonged exertion outside', text: 'Air quality is moderate today.' });
+    }
+    if (recs.length === 0) {
+        recs.push({ icon: 'fa-circle-check', label: 'No special precautions needed', text: 'Conditions look ordinary today.' });
+    }
+    return recs;
 }
 
 function buildStats(current, units) {
@@ -122,14 +184,16 @@ function buildChartSeries(forecast, units) {
     };
 }
 
-function generateSummary(current, forecast, airQuality, alerts, units = 'metric') {
+function generateSummary(current, forecast, airQuality, alerts, units = 'metric', prefs = null) {
+    const userPrefs = prefs || getUserPrefs();
     return {
-        headline: buildHeadline(current, units),
-        paragraphs: buildParagraphs(current, forecast, airQuality, alerts, units),
+        headline: buildHeadline(current, units, userPrefs),
+        paragraphs: buildParagraphs(current, forecast, airQuality, alerts, units, userPrefs),
+        recommendations: buildRecommendations(current, forecast, airQuality, alerts, units, userPrefs),
         stats: buildStats(current, units),
         confidence: computeConfidence(forecast),
         chart: buildChartSeries(forecast, units)
     };
 }
 
-window.WVAISummary = { generateSummary, comfortDescriptor, computeConfidence };
+window.WVAISummary = { generateSummary, comfortDescriptor, computeConfidence, getUserPrefs, buildRecommendations };
