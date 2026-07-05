@@ -2,6 +2,21 @@
 
 Notable changes to WeatherView, newest first.
 
+## v3.0.3
+
+- Fixed the search/autocomplete dropdown still visibly showing whatever
+  page content sat behind it (the animated sky, map tiles, hero cards),
+  even though its text stayed readable. It was using the same ~62%-opaque
+  scrim as cards/header - enough for text contrast, but still translucent
+  enough that the dropdown's own background visibly changed shade
+  row-to-row depending what was directly behind each option, which read as
+  "still overlapping" rather than sitting cleanly on top. Gave dropdowns
+  (header search + both Locations compare-tool fields) their own near-
+  opaque (~96%) scrim so the background never bleeds through regardless of
+  what's behind them. Confirmed via direct `elementFromPoint` inspection
+  that stacking/z-index was already correct in every case - this was
+  purely a translucency-variance problem, not a stacking one.
+
 ## v3.0.2
 
 - Fixed the AI Summary personalization prompt's "Skip" button looking

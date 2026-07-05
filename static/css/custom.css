@@ -231,6 +231,17 @@
   --wv-glass-text-scrim-light: rgba(255, 255, 255, 0.62);
   --wv-glass-text-scrim-dark: rgba(0, 0, 0, 0.62);
 
+  /* Dropdowns (search/autocomplete suggestions) sit on top of genuinely
+     arbitrary content - the animated sky, map tiles, hero cards, popular-
+     city tiles - not just the sky the 62% scrim above was tuned for. At
+     62% opacity the text itself stayed readable, but the *background*
+     still visibly changed shade row-to-row depending what was directly
+     behind each option, reading as the dropdown still "bleeding through"
+     even though contrast was technically fine - a near-opaque scrim
+     removes that variance entirely instead of just managing it. */
+  --wv-dropdown-scrim-light: rgba(255, 255, 255, 0.96);
+  --wv-dropdown-scrim-dark: rgba(23, 23, 23, 0.96);
+
   /* ---- Transitions ---- */
   --wv-transition-fast: 150ms ease-out;
   --wv-transition-base: 200ms ease-out;
@@ -417,18 +428,21 @@
   border-color: var(--wv-glass-border-dark);
 }
 
-/* Glass dropdown - uses the same ~62%-opaque scrim .glass-card/.wv-header
-   use for separation from the animated sky scene, not the much lighter
+/* Glass dropdown - near-opaque (--wv-dropdown-scrim-*, ~96%), not the
+   ~62%-opaque scrim .glass-card/.wv-header use, and nowhere close to the
    ~15-25%-opaque --wv-glass-bg-* tokens plain glass buttons/inputs use.
    Search suggestions sit on top of whatever busy page content (the empty-
-   state welcome card, hero card, etc.) happens to be behind the search
-   bar - at 15% opacity that content visually bled through the dropdown
-   strongly enough to make its own text unreadable, which read as the
-   dropdown "getting overlapped" even though z-index/stacking was already
-   correct (confirmed via elementFromPoint - the dropdown really was on
-   top, it just wasn't opaque enough to look like it). */
+   state welcome card, hero card, map tiles, popular-city tiles) happens to
+   be behind the search bar - at 62% opacity the text itself stayed
+   readable, but the dropdown's own background still visibly changed shade
+   row-to-row depending what was directly behind each option, which still
+   reads as "overlapping"/bleeding through even with legible text (confirmed
+   via elementFromPoint - the dropdown really was on top and its z-index was
+   correct; this was purely a translucency-variance problem, not a stacking
+   one). Near-opaque removes that variance entirely instead of just
+   managing it. */
 .glass-dropdown {
-  background: var(--wv-glass-text-scrim-light);
+  background: var(--wv-dropdown-scrim-light);
   backdrop-filter: blur(var(--wv-glass-blur)) saturate(var(--wv-glass-saturate));
   -webkit-backdrop-filter: blur(var(--wv-glass-blur)) saturate(var(--wv-glass-saturate));
   border: 1px solid var(--wv-glass-border-light);
@@ -439,7 +453,7 @@
 }
 
 [data-bs-theme="dark"] .glass-dropdown {
-  background: var(--wv-glass-text-scrim-dark);
+  background: var(--wv-dropdown-scrim-dark);
   border-color: var(--wv-glass-border-dark);
 }
 

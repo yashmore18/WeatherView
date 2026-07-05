@@ -1,9 +1,8 @@
 {
-  "version": "v3.0.2",
+  "version": "v3.0.3",
   "notes": [
+    "Fixed the search dropdown still showing page content through it",
     "Fixed cramped/unstyled buttons on the AI Summary personalization prompt",
-    "Answering that prompt now shows a confirmation and a concrete effect",
-    "Fixed the installed app showing an unverified/unsafe warning on Android",
-    "Added a legend and units to the AI Summary temperature chart"
+    "Fixed the installed app showing an unverified/unsafe warning on Android"
   ]
 }
