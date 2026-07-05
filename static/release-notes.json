@@ -1,10 +1,9 @@
 {
-  "version": "v2.1.0",
+  "version": "v3.0.0",
   "notes": [
-    "Fixed search suggestions being unreadable when overlapping page content",
-    "New one-time prompt for location & notification access",
-    "Added 'Clear cache & reset app' to Settings",
-    "Logo now links back to Today from the sidebar and mobile header",
-    "Added a Changelog link to the footer"
+    "Fixed toasts freezing on screen - the X button and swiping now both dismiss them",
+    "AI Summary now suggests umbrella/sunscreen/stay-indoors calls and can be personalized to how warm or cold you run",
+    "New first-launch intro explains what makes WeatherView different before asking for your name",
+    "Clearing cache & resetting now shows the splash screen like a fresh start"
   ]
 }

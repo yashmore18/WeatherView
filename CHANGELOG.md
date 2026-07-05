@@ -2,6 +2,33 @@
 
 Notable changes to WeatherView, newest first.
 
+## v3.0.0 - Final release
+
+- Fixed toasts (success/error) freezing on screen with no way to dismiss
+  them. Root cause: several `animation` shorthand CSS declarations
+  (toast enter/exit, the Today page's hero card, every page's `.wv-section`
+  entrance, and the splash screen's slide-up) appended a redundant timing
+  function after CSS custom properties that already bundled one in, which
+  silently invalidates the entire shorthand in every browser with no console
+  error - so those animations were never actually running, and the toast
+  dismiss logic (which only removes a toast once its exit animation
+  finishes) had nothing to wait for. Also added touch swipe-to-dismiss for
+  toasts, mirroring the existing alert-banner gesture.
+- **AI Summary now gives concrete, icon-labeled recommendations** (umbrella,
+  sunscreen, bundle up, secure loose items, stay indoors, limit exertion),
+  driven by rain/heat/cold/wind/air-quality/alert rules, alongside the
+  existing narrative. A short, skippable one-time prompt (also editable from
+  Settings) asks whether you tend to run warm or cold and personalizes the
+  comfort thresholds behind both the narrative and the recommendations.
+- **Added a first-launch intro** explaining what sets WeatherView apart
+  (real hourly data, the AI Summary page, offline PWA support with
+  on-device-only personalization, and that it's open-source) before the
+  existing name and permissions prompts - shown once, chained so a brand-new
+  visit never shows more than one modal at a time.
+- Fixed "Clear cache & reset app" dropping straight back into the app with
+  no transition; that reload now shows the same splash screen as a genuine
+  cold start.
+
 ## v2.1.0
 
 - Fixed search suggestions becoming unreadable when they overlapped page

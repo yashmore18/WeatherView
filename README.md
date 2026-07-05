@@ -1,6 +1,6 @@
 # WeatherView
 
-**v2.1.0**
+**v3.0.0**
 
 A fast, mobile-first weather app for any city in the world - current
 conditions, real hourly + 7-day forecasts, an algorithm-generated AI
@@ -63,6 +63,15 @@ name, it's our own rule-based algorithm over live data
 there's no new API dependency, no added cost, and no data leaving the
 server that wasn't already being fetched.
 
+Also surfaces concrete, icon-labeled call-outs alongside the narrative -
+bring an umbrella, wear sunscreen, bundle up, secure loose items, stay
+indoors, or limit exertion outside - driven by rain/heat/cold/wind/AQI/alert
+rules rather than only prose. A short, skippable one-time prompt (also
+editable anytime from Settings) asks whether you tend to run warm or cold,
+and shifts the comfort thresholds behind both the narrative and the
+recommendations accordingly, so the summary reflects the reader instead of
+one fixed baseline for everyone.
+
 ### Smart alerts
 Rule-based, computed client-side from data already fetched (no extra API
 calls): rain starting soon, rain letting up (with the *city's own* local
@@ -111,6 +120,11 @@ layer. Both the weather overlays and the basemap are proxied server-side -
 your browser never talks to a third party directly.
 
 ### Experience
+- A one-time first-launch intro explains what WeatherView actually offers
+  (real hourly data, the AI Summary page, offline PWA support, and that it's
+  open-source) before asking anything of you - chains into the name prompt,
+  which chains into the permissions prompt, so a brand-new visit never shows
+  more than one modal at once
 - A one-time, skippable name prompt personalizes the Today page with a
   time-of-day greeting ("Good afternoon, Yash") - stored in `localStorage`
   only, editable/clearable anytime from Settings, nothing sent to a server
@@ -119,7 +133,10 @@ your browser never talks to a third party directly.
   appearing out of nowhere with no context - skips itself if both are
   already decided either way
 - "Clear cache & reset app" in Settings for a genuine fresh start if the
-  app ever gets stuck on a stale cached version
+  app ever gets stuck on a stale cached version - the reload it triggers
+  shows the same splash screen as a real cold start, not just a blank flash
+- Toasts (success/error) are dismissible with their close button or by
+  swiping them away on touch devices, same as alert banners
 - Dark/light mode with automatic system-preference detection
 - Fully responsive: desktop sidebar, tablet off-canvas drawer, phone bottom
   tab bar - three genuinely different navigation patterns, not one shrunk
