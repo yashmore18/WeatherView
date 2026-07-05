@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}{{ metric_title }} - WeatherView{% endblock %}
+
+{% block content %}
+<div class="wv-page wv-highlight-page" data-metric="{{ metric }}">
+    <a href="{{ url_for('index') }}" class="wv-btn wv-btn--ghost wv-btn--sm wv-highlight-page__back">
+        <i class="fas fa-chevron-left" aria-hidden="true"></i>
+        <span>Today</span>
+    </a>
+
+    <section class="wv-hero-card__inner glass-card wv-highlight-page__card" aria-labelledby="highlightPageTitle">
+        <header class="wv-detail-card__header">
+            <div class="wv-detail-card__icon" aria-hidden="true"><i class="fas {{ metric_icon }}"></i></div>
+            <h1 id="highlightPageTitle" class="wv-detail-card__title">{{ metric_title }}</h1>
+        </header>
+
+        <div id="highlightSkeleton" class="wv-details-skeleton" aria-hidden="true">
+            <div class="wv-skeleton wv-skeleton--block" style="height: 120px;"></div>
+        </div>
+
+        <div id="highlightBody" style="display: none;">
+            <div class="wv-detail-card__value" id="highlightValue">--</div>
+            <p class="wv-detail-card__subtitle" id="highlightSubtitle"></p>
+
+            <!-- Wind-only compass, hidden for other metrics -->
+            <div class="wv-wind-card__body" id="highlightCompassWrap" style="display: none;">
+                <div class="wv-compass">
+                    <div class="wv-compass__needle" id="highlightCompassNeedle"><i class="fas fa-location-arrow" aria-hidden="true"></i></div>
+                    <span class="wv-compass__label wv-compass__label--n">N</span>
+                    <span class="wv-compass__label wv-compass__label--e">E</span>
+                    <span class="wv-compass__label wv-compass__label--s">S</span>
+                    <span class="wv-compass__label wv-compass__label--w">W</span>
+                </div>
+            </div>
+
+            <!-- Humidity/pressure/visibility gauge bar, hidden for wind -->
+            <div class="wv-aqi-bar" id="highlightBarWrap" style="display: none;">
+                <div class="wv-aqi-bar__fill" id="highlightBarFill"></div>
+            </div>
+
+            <div class="wv-detail-card__extra" id="highlightExtra"></div>
+
+            <p class="wv-highlight-page__explainer" id="highlightExplainer"></p>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pages/highlight.js') }}"></script>
+{% endblock %}

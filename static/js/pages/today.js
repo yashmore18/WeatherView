@@ -11,7 +11,6 @@ class TodayPage {
 
         this.setupEventListeners();
         this.setupPullToRefresh();
-        this.setupHighlightExpand();
         this.loadInitialCity();
         if (!this.wv.getResolvedCity()) this.loadPopularCities();
 
@@ -48,27 +47,6 @@ class TodayPage {
             return this.handleCitySelected({ city: this.currentCity });
         }
         return Promise.resolve();
-    }
-
-    // Humidity/Wind/Pressure/Visibility hero tiles are compact by design, so
-    // extra detail (dew point, gusts, sea level, cloud cover) is hidden until
-    // tapped/clicked rather than always shown, unlike the larger detail cards
-    // further down the page.
-    setupHighlightExpand() {
-        const tiles = document.querySelectorAll('.wv-hero-card__highlights .wv-highlight');
-        tiles.forEach(tile => {
-            const toggle = () => {
-                const expanded = tile.classList.toggle('is-expanded');
-                tile.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-            };
-            tile.addEventListener('click', toggle);
-            tile.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    toggle();
-                }
-            });
-        });
     }
 
     // Swipe-down-from-top gesture, mirroring the native pull-to-refresh
@@ -496,18 +474,6 @@ class TodayPage {
         document.getElementById('heroWind').textContent = `${data.wind_speed} ${windUnit}`;
         document.getElementById('heroPressure').textContent = `${data.pressure} hPa`;
         document.getElementById('heroVisibility').textContent = `${data.visibility} km`;
-
-        // Same approximations already used on the Forecast page's always-on
-        // detail cards - reused here since the API doesn't return dew point
-        // or gust directly for the current-conditions endpoint.
-        const dewPoint = data.dew_point || Math.round(data.temp - ((100 - data.humidity) / 5));
-        const windGust = data.wind_gust || Math.round(data.wind_speed * 1.5);
-        const seaLevel = data.sea_level || data.pressure;
-        document.getElementById('heroDewPoint').textContent = `${dewPoint}${tempUnit}`;
-        document.getElementById('heroWindGust').textContent = `${windGust} ${windUnit}`;
-        document.getElementById('heroWindDir').textContent = `${data.wind_deg || 0}° ${this.wv.getWindDirection(data.wind_deg || 0)}`;
-        document.getElementById('heroSeaLevel').textContent = `${seaLevel} hPa`;
-        document.getElementById('heroCloudCover').textContent = `${data.clouds ?? '--'}%`;
 
         this.lastUpdatedAt = Date.now();
         this.refreshUpdatedLabel();

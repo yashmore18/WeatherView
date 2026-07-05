@@ -5,7 +5,7 @@ import secrets
 import webbrowser
 import threading
 import logging
-from flask import Flask, render_template, jsonify, request, send_from_directory, g
+from flask import Flask, render_template, jsonify, request, send_from_directory, g, abort
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -192,6 +192,31 @@ def settings_page():
     """Render the Settings page (units, theme, alert preferences)."""
     logger.info("Serving Settings page")
     return render_template('settings.html', active_page='settings')
+
+# Today page's Humidity/Wind/Pressure/Visibility hero tiles each link to one
+# of these instead of only expanding in place - metric is validated against
+# an allowlist (not passed straight to the template as free text) since it
+# also selects which icon/copy block renders.
+HIGHLIGHT_METRICS = {
+    'humidity': {'title': 'Humidity', 'icon': 'fa-tint'},
+    'wind': {'title': 'Wind', 'icon': 'fa-wind'},
+    'pressure': {'title': 'Pressure', 'icon': 'fa-compress-arrows-alt'},
+    'visibility': {'title': 'Visibility', 'icon': 'fa-eye'},
+}
+
+@app.route('/highlight/<metric>')
+def highlight_page(metric):
+    """Render the detail page for one Today-page highlight tile."""
+    if metric not in HIGHLIGHT_METRICS:
+        abort(404)
+    logger.info("Serving Highlight detail page: %s", metric)
+    return render_template(
+        'highlight.html',
+        active_page='today',
+        metric=metric,
+        metric_title=HIGHLIGHT_METRICS[metric]['title'],
+        metric_icon=HIGHLIGHT_METRICS[metric]['icon'],
+    )
 
 @app.route('/sw.js')
 def service_worker():

@@ -60,9 +60,20 @@ class MapPage {
     }
 
     initMap() {
-        this.map = L.map('wvMap', { zoomControl: true }).setView([20, 0], 2);
+        // Default zoomControl (topleft) sits directly under where the legend
+        // has to move to on phone widths (bottom is already taken by the
+        // layer-switch buttons there) - bottomright is unused by any other
+        // overlay on any breakpoint, so the zoom buttons live there instead.
+        this.map = L.map('wvMap', { zoomControl: false }).setView([20, 0], 2);
+        L.control.zoom({ position: 'bottomright' }).addTo(this.map);
         const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
         this.setBasemap(isDark);
+
+        // iOS Safari/Chrome resize their visible viewport as the address bar
+        // shows/hides on scroll, which can leave Leaflet's internally-cached
+        // size stale (map looks cut off or tiles stop loading in the newly
+        // revealed area) until it's told to re-measure.
+        window.addEventListener('resize', () => this.map.invalidateSize());
     }
 
     setBasemap(isDark) {
