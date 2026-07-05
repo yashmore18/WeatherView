@@ -162,6 +162,7 @@ class AiSummaryPage {
         const gridColor = isDark ? '#404040' : '#a3a3a3';
         const styles = getComputedStyle(document.documentElement);
         const accentColor = styles.getPropertyValue('--wv-color-accent').trim();
+        const tempUnit = this.wv.currentUnits === 'imperial' ? '°F' : '°C';
 
         if (this.chart) this.chart.destroy();
         this.chart = new Chart(ctx, {
@@ -169,6 +170,7 @@ class AiSummaryPage {
             data: {
                 labels: chartData.labels,
                 datasets: [{
+                    label: `Temperature (${tempUnit})`,
                     data: chartData.temps,
                     borderColor: accentColor,
                     backgroundColor: 'rgba(59, 130, 246, 0.12)',
@@ -182,10 +184,15 @@ class AiSummaryPage {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: {
+                    legend: {
+                        display: true, position: 'top', align: 'end',
+                        labels: { color: textColor, font: { family: 'var(--wv-font-sans)', size: 12 }, usePointStyle: true, padding: 12 }
+                    }
+                },
                 scales: {
                     x: { grid: { display: false }, ticks: { color: textColor, font: { size: 11 } } },
-                    y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 11 } } }
+                    y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 11 }, callback: (v) => `${v}${tempUnit}` } }
                 }
             }
         });
@@ -199,6 +206,7 @@ class AiSummaryPage {
         this.chart.options.scales.x.ticks.color = textColor;
         this.chart.options.scales.y.ticks.color = textColor;
         this.chart.options.scales.y.grid.color = gridColor;
+        this.chart.options.plugins.legend.labels.color = textColor;
         this.chart.update();
     }
 }

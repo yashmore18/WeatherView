@@ -1,9 +1,8 @@
 {
-  "version": "v3.0.0",
+  "version": "v3.0.1",
   "notes": [
-    "Fixed toasts freezing on screen - the X button and swiping now both dismiss them",
-    "AI Summary now suggests umbrella/sunscreen/stay-indoors calls and can be personalized to how warm or cold you run",
-    "New first-launch intro explains what makes WeatherView different before asking for your name",
-    "Clearing cache & resetting now shows the splash screen like a fresh start"
+    "Fixed the installed app showing an unverified/unsafe warning on Android",
+    "Clearer AI Summary personalization question, with the effect explained",
+    "Added a legend and units to the AI Summary temperature chart"
   ]
 }

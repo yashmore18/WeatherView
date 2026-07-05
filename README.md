@@ -1,6 +1,6 @@
 # WeatherView
 
-**v3.0.0**
+**v3.0.1**
 
 A fast, mobile-first weather app for any city in the world - current
 conditions, real hourly + 7-day forecasts, an algorithm-generated AI

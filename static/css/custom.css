@@ -4305,6 +4305,14 @@ body[data-page="map"] .wv-content {
   letter-spacing: 0.03em;
 }
 
+.wv-ai-summary__chart-caption {
+  margin: 0 0 var(--wv-space-2);
+  font-size: var(--wv-text-xs);
+  color: var(--wv-color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .wv-ai-summary__chart-wrap {
   height: 180px;
   opacity: 0;

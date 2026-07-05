@@ -136,6 +136,14 @@ def _inject_csp_nonce():
 
 @app.after_request
 def _set_security_headers(response):
+    # Flask's static handler guesses "application/json" for manifest.json by
+    # extension alone. Chrome/Android's WebAPK minting (what makes an
+    # installed PWA a real, verified, non-shortcut app instead of a bare
+    # Chrome-wrapped bookmark that Android/Play Protect flags as an
+    # unverified/unsafe app) requires the manifest to be served as
+    # "application/manifest+json" - this is required, not cosmetic.
+    if request.path == '/static/manifest.json':
+        response.headers['Content-Type'] = 'application/manifest+json'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'

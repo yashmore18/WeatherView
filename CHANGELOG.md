@@ -2,6 +2,26 @@
 
 Notable changes to WeatherView, newest first.
 
+## v3.0.1
+
+- Fixed the installed PWA showing an "unverified/unsafe app" warning after
+  install on Android. `static/manifest.json` was being served as
+  `application/json` (Flask's static handler guessing by file extension)
+  instead of `application/manifest+json` - Chrome's WebAPK minting (what
+  turns an installed PWA into a real, verified app rather than a bare
+  Chrome-wrapped shortcut that Android/Play Protect flags as unverified)
+  requires the correct MIME type. Now set explicitly in `app.py`.
+- Reworded the AI Summary personalization prompt and its matching Settings
+  control - "Do you run warm or cold?" was genuinely ambiguous (readers
+  weren't sure what it was asking or what it would change). Now asks
+  directly ("In warm weather, do you feel hotter or colder than most
+  people?") and explains the concrete effect (shifts when a temperature
+  gets called "uncomfortable" for you) before offering options.
+- Added a visible legend and axis units to the AI Summary temperature
+  chart, plus a caption above it - the chart previously had no label at
+  all, so there was no way to tell what the line represented or over what
+  timeframe.
+
 ## v3.0.0 - Final release
 
 - Fixed toasts (success/error) freezing on screen with no way to dismiss
