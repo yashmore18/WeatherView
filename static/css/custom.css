@@ -1332,6 +1332,53 @@ body {
   font-size: var(--wv-text-sm);
 }
 
+.wv-footer__about {
+  max-width: 480px;
+}
+
+.wv-footer__title {
+  margin: 0 0 var(--wv-space-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wv-space-2);
+  font-weight: var(--wv-font-weight-semibold);
+  color: var(--wv-color-text-primary);
+}
+
+.wv-footer__links {
+  display: flex;
+  align-items: center;
+  gap: var(--wv-space-2);
+  color: var(--wv-color-text-tertiary);
+  font-size: var(--wv-text-sm);
+}
+
+.wv-footer__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wv-space-1);
+  color: var(--wv-color-text-secondary);
+  text-decoration: none;
+  transition: color var(--wv-transition-fast);
+}
+
+.wv-footer__links a:hover {
+  color: var(--wv-color-accent);
+  text-decoration: underline;
+}
+
+.wv-footer__divider {
+  color: var(--wv-color-border-strong);
+}
+
+.wv-footer__credit {
+  padding-top: var(--wv-space-2);
+  border-top: 1px solid var(--wv-color-border);
+  width: 100%;
+  max-width: 240px;
+}
+
 /* Responsive Layout */
 @media (max-width: 1024px) {
   .wv-sidebar {
@@ -1423,8 +1470,15 @@ body {
     display: none !important;
   }
 
+  /* Previously hidden entirely on phones (attribution text competed with
+     the tab bar for the same screen strip) - now that the footer carries a
+     real About section and GitHub link, not just a one-line credit, it's
+     worth keeping on a mobile-first app. It's normal-flow content sitting
+     right before the *fixed* tab bar though, so it needs the same bottom
+     clearance .wv-content already gets, or its last ~64px would scroll up
+     permanently behind the bar with no way to reach it. */
   .wv-footer {
-    display: none;
+    padding-bottom: calc(var(--wv-space-6) + 64px + env(safe-area-inset-bottom, 0px));
   }
 
   /* Header wraps to a second row on phones (search box drops below the
